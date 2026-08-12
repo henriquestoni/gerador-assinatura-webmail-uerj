@@ -1,0 +1,14 @@
+{
+  "name": "gerador-assinatura-webmail-uerj",
+  "version": "0.14.0",
+  "description": "Gerador de assinatura de e-mail no padrão da Uerj. A página em si não tem dependência alguma; o jsdom serve apenas à bateria de testes.",
+  "private": true,
+  "scripts": {
+    "test": "node testes/executar.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  },
+  "author": "Toni Henriques <oliveira.toni@uerj.br>",
+  "license": "UNLICENSED"
+}

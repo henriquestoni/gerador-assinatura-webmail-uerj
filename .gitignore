@@ -8,6 +8,10 @@ desktop.ini
 *.swp
 *~
 
+# dependência só dos testes
+node_modules/
+package-lock.json
+
 # cópias de trabalho
 *.bak
 *.tmp

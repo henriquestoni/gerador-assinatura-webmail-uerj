@@ -1,22 +1,34 @@
-/* Assinatura de e-mail Uerj | assinatura.js | versão beta 13 */
-const LINHAS = 14, COLS = 3, VAZIAS_MIN = 0;   /* o rodapé já cria linhas quando preciso */
+/* Assinatura de e-mail Uerj | assinatura.js | versão beta 14 */
+const VERSAO = "beta 14";
+const LINHAS = 14, COLS = 3;   /* o rodapé já cria linhas quando preciso */
 
+/* prefixo de todos os id gerados: isola os campos de qualquer id do HTML */
+const PRE = "asg_";
+
+/* `numero`: campo só de algarismos, que não ganha o sinal de caixa alta.
+   `mascaraOpcional`: campo cuja máscara de entrada pode ser desligada. */
 let defs = [
-  {id:"nome",        rotulo:"Nome",          titulo:"",              dica:"Maria da Silva", fixo:true, negrito:true, caixa:true},
+  {id:"nome",        rotulo:"Nome",          titulo:"",              dica:"Maria da Silva", obrigatorio:true, negrito:true},
   {id:"cargo",       rotulo:"Cargo",         titulo:"Cargo: ",       dica:"Técnico Universitário"},
   {id:"funcao",      rotulo:"Função",        titulo:"Função: ",      dica:"Chefe de Serviço"},
-  {id:"matricula",   rotulo:"Matrícula",     titulo:"Matrícula: ",   dica:"00.000-0", mascara:"mat", curto:"mat. "},
-  {id:"lotacao",     rotulo:"Lotação",       titulo:"",              dica:"ECOMUSEU/PR-3", negrito:true, caixa:true, caixaPadrao:true},
-  {id:"celular",     rotulo:"Celular",       titulo:"Celular: ",     dica:"(00)00000-0000", curto:"Cel: ", tel:true, modoCel:true},
-  {id:"fixo",        rotulo:"Telefone",      titulo:"Telefone: ",    dica:"(21)2334-0000, ramais 210, 211", curto:"Tel: ", tel:true, modoCel:false},
+  {id:"matricula",   rotulo:"Matrícula",     titulo:"Matrícula: ",   dica:"00.000-0", mascara:"mat", curto:"mat. ", numero:true},
+  {id:"lotacao",     rotulo:"Lotação",       titulo:"",              dica:"ECOMUSEU/PR-3", negrito:true, caixaPadrao:true},
+  {id:"celular",     rotulo:"Celular",       titulo:"Celular: ",     dica:"(21)91234-5678", curto:"Cel: ", tel:true, numero:true, mascaraSempre:true},
+  {id:"fixo",        rotulo:"Telefone",      titulo:"Telefone: ",    dica:"(21)2334-0000", dicaLivre:"(21)2334-0000, ramais 210, 211",
+                     curto:"Tel: ", tel:true, numero:true, mascaraOpcional:true, mascaraPadrao:true},
   {id:"email",       rotulo:"E-mail",        titulo:"E-mail:&nbsp;", dica:"usuario@uerj.br", curto:""},
   {id:"sala",        rotulo:"Sala",          titulo:"Sala: ",        dica:"3.002, bloco F, 3º andar", curto:"sala "},
   {id:"atendimento", rotulo:"Atendimento",   titulo:"Atendimento: ", dica:"seg. a sex., 9h às 17h", curto:"Atendimento: "},
-  {id:"livre",       rotulo:"Campo livre",   titulo:"",              dica:"Conteúdo", dicaTitulo:"Título (opcional)", livre:true}
+  /* o campo livre aceita telefone e vira link de WhatsApp, mas não leva máscara:
+     ela reescreveria o que se digita num campo cuja razão de ser é aceitar qualquer coisa */
+  {id:"livre",       rotulo:"Campo livre",   titulo:"",              dica:"Conteúdo", dicaTitulo:"Título (necessário)",
+                     livre:true, tel:true}
 ];
 const porId = Object.fromEntries(defs.map(d => [d.id, d]));
 const DEFS_BASE = defs.map(d => Object.assign({}, d));   /* lista original, para recriar o que for apagado */
 const PADRAO = [["nome"],["cargo","funcao","matricula"],["lotacao"],[],["celular","fixo"],["email","sala"],[],["atendimento"],["livre"]];
+/* a linha do Nome sai travada; as demais, livres */
+const TRAVAS_PADRAO = PADRAO.map((l, i) => i === 0);
 
 /* enquanto nada for digitado, a visualização mostra um exemplo */
 const EXEMPLO = {
@@ -41,6 +53,45 @@ const el = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const B = t => '<span style="font-weight:900">' + t + '</span>';
 
+/* acesso aos elementos de cada campo, sempre pelo prefixo */
+const campo   = id      => el(PRE + id);                 /* caixa de conteúdo */
+const tituloEl = id     => el(PRE + "t_" + id);          /* caixa de título do campo livre */
+const marca   = (k, id) => el(PRE + k + "_" + id);       /* b, c, m, w */
+
+/* Sinais desenhados, em traço fechado, herdando a cor do texto do chip.
+   Traçado do balão e do fone; a caixa de cada um foi medida no próprio desenho.
+   O sistema de coordenadas é o do arquivo original: décimos, com o eixo Y invertido. */
+const TRACO_BALAO = "M6255 6844 c-540 -35 -1107 -229 -1555 -532 -473 -320 -848 -752 -1091 -1256 -133 -276 -216 -536 -273 -856 -43 -240 -52 -602 -22 -880 40 -374 177 -822 362 -1188 l53 -103 -123 -367 c-68 -202 -191 -570 -274 -818 -84 -249 -152 -459 -152 -469 0 -9 13 -22 29 -28 26 -10 29 -14 24 -45 -6 -32 -5 -34 18 -27 41 13 936 298 1314 420 198 63 368 115 378 115 9 0 52 -17 95 -39 366 -184 756 -294 1171 -332 164 -14 498 -7 659 16 954 132 1766 659 2266 1468 163 264 318 632 401 952 79 307 117 688 96 982 -54 781 -356 1473 -881 2017 -509 527 -1157 853 -1895 952 -108 14 -482 26 -600 18z m391 -684 c357 -29 650 -108 959 -259 419 -206 770 -514 1030 -906 200 -301 323 -625 371 -979 23 -168 23 -508 0 -680 -163 -1209 -1161 -2141 -2372 -2217 -427 -26 -824 44 -1212 214 -107 47 -284 143 -339 183 -17 13 -39 24 -49 24 -9 0 -222 -65 -472 -145 -250 -80 -456 -145 -457 -143 -2 2 62 197 141 433 79 237 144 442 144 458 0 16 -18 53 -44 90 -418 599 -554 1426 -351 2127 45 152 82 245 155 390 200 391 505 732 880 982 473 316 1064 472 1616 428z";
+const TRACO_FONE = "M5323 5236 c-23 -7 -56 -23 -75 -34 -51 -32 -199 -190 -245 -262 -147 -229 -180 -534 -92 -832 67 -225 149 -397 299 -629 190 -292 313 -450 510 -653 296 -305 545 -476 927 -635 282 -118 490 -185 607 -197 81 -8 258 20 362 58 144 52 309 168 373 262 64 96 130 313 138 457 l6 95 -31 36 c-22 24 -112 78 -294 176 -432 232 -487 254 -555 218 -17 -8 -81 -73 -141 -143 -178 -207 -215 -243 -245 -243 -38 0 -287 127 -403 205 -135 92 -223 166 -334 281 -132 137 -275 333 -355 486 l-18 36 72 79 c95 101 134 162 172 268 39 108 37 141 -20 290 -51 133 -92 243 -163 434 -58 157 -101 221 -161 240 -57 17 -287 22 -334 7z";
+const ESCALA_TRACO = 'transform="translate(0,720) scale(0.1,-0.1)"';
+function sinalSVG(caixa, tracos){
+  return '<svg viewBox="' + caixa + '" width="12" height="12" aria-hidden="true" focusable="false">' +
+         '<g ' + ESCALA_TRACO + ' fill="currentColor" stroke="none">' + tracos + '</g></svg>';
+}
+const SINAL_ZAP = sinalSVG("318 35.3 645.7 657.5", '<path d="' + TRACO_BALAO + '"/><path d="' + TRACO_FONE + '"/>');
+/* máscara de entrada: o "#" é o marcador de algarismo da linguagem de formato do Excel,
+   e o mesmo símbolo que as bibliotecas de máscara usam para dizer "aqui entra número" */
+const SINAL_MASCARA = "#";
+const TITULO_MASCARA = "Máscara de entrada: com ela, o campo aceita só telefone, com 10 ou 11 algarismos; sem ela, aceita qualquer conteúdo";
+
+/* um chip de marcação: só o sinal, sem rótulo; o nome fica no title e no leitor de tela */
+function sinalMarc(chave, id, ligado, titulo, sinal, extra){
+  return '<label class="marc' + (extra ? " " + extra : "") + '" title="' + esc(titulo) + '">' +
+    '<input type="checkbox" autocomplete="off" id="' + PRE + chave + "_" + id + '"' + (ligado ? " checked" : "") +
+    ' aria-label="' + esc(titulo) + '">' + sinal + '</label>';
+}
+
+/* molde de campo livre: um lugar só, usado na criação e na recriação */
+const RE_LIVRE = /^livre(\d+)$/;                         /* só para numerar; o que identifica é d.livre */
+function defLivre(id){
+  return { id, rotulo:"Campo livre", titulo:"", dica:"Conteúdo", dicaTitulo:"Título (necessário)",
+           livre:true, tel:true };
+}
+/* campo livre criado por quem usa, que some ao restaurar o padrão */
+function livreExtra(id){
+  return !!(porId[id] && porId[id].livre) && !DEFS_BASE.some(d => d.id === id);
+}
+
 /* ---------- logotipo ---------- */
 /* Todos hospedados em endereços da Uerj; a página confere se respondem. */
 /* largura máxima de 120px: acima disso o logotipo domina a assinatura */
@@ -56,7 +107,11 @@ let logoEscolhido = "selo";
 
 /* memória do teste: guarda só a data em que cada selo respondeu, nada pessoal */
 const CHAVE_LOGOS = "assinaturaUerj.logosOk";
-const hoje = () => new Date().toISOString().slice(0, 10);
+/* data local, não UTC: no fuso de Brasília o dia mudaria às 21h */
+const hoje = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+};
 function memoria(){
   try { return JSON.parse(localStorage.getItem(CHAVE_LOGOS)) || {}; }
   catch(e){ return {}; }
@@ -101,14 +156,27 @@ function testarLogo(l, tentativa, pronto){
 function marcarLogo(l){
   const alvo = document.querySelector('.opcaoLogo[data-id="' + l.id + '"]');
   if(!alvo) return;
-  /* o primeiro da lista fica sempre visível; os outros somem se não responderem */
-  const primeiro = LOGOS[0].id === l.id;
-  alvo.classList.toggle("hide", l.ok === false && !primeiro);
+  /* enquanto não foi testado, todo logotipo aparece; o que falhou some, inclusive o primeiro:
+     manter na lista um endereço fora do ar só produziria imagem quebrada */
+  alvo.classList.toggle("hide", l.ok === false);
+  semLogotipos();
+}
+/* aviso quando nenhum endereço responde */
+function semLogotipos(){
+  const box = el("logos");
+  const nenhum = !box.querySelector(".opcaoLogo:not(.hide)");
+  let nota = box.querySelector(".semLogo");
+  if(nenhum && !nota){
+    nota = document.createElement("span");
+    nota.className = "dica semLogo";
+    nota.textContent = "Nenhum logotipo está respondendo agora; a assinatura sai sem imagem.";
+    box.appendChild(nota);
+  } else if(!nenhum && nota) nota.remove();
 }
 
 function montarLogos(){
   const box = el("logos");
-  box.innerHTML = LOGOS.filter(l => l.ok !== false || LOGOS[0].id === l.id).map(l =>
+  box.innerHTML = LOGOS.filter(l => l.ok !== false).map(l =>
     '<label class="marc opcaoLogo" data-id="' + l.id + '" style="font-size:12px">' +
       '<input type="radio" autocomplete="off" name="logo" value="' + l.id + '"' + (l.id === logoEscolhido ? " checked" : "") + '>' +
       '<img src="' + l.src + '" alt="' + l.rotulo + '" height="34">' +
@@ -151,12 +219,17 @@ function corBarra(){ return document.getElementById("cor").value.toUpperCase(); 
 function espessuraBarra(){ return document.getElementById("espessura").value; }
 
 /* ---------- máscaras ---------- */
-/* celular: (00)00000-0000 — nove dígitos após o DDD */
+/* Aceita fixo e celular: (21)2334-0000 e (21)91234-5678.
+   Um +55 ou 55 digitado à frente é descartado, para não virar DDD. */
 function mascaraTelefone(v){
-  const d = v.replace(/\D/g,"").slice(0,11);
+  let d = String(v).replace(/\D/g,"");
+  if(d.length > 11 && d.startsWith("55")) d = d.slice(2);
+  d = d.slice(0,11);
   if(d.length <= 2) return d.length ? "(" + d : "";
-  if(d.length <= 7) return "(" + d.slice(0,2) + ")" + d.slice(2);
-  return "(" + d.slice(0,2) + ")" + d.slice(2,7) + "-" + d.slice(7);
+  if(d.length <= 6) return "(" + d.slice(0,2) + ")" + d.slice(2);
+  /* com 11 algarismos o corte vai depois do quinto; com 10, depois do quarto */
+  const corte = d.length > 10 ? 7 : 6;
+  return "(" + d.slice(0,2) + ")" + d.slice(2,corte) + "-" + d.slice(corte);
 }
 function mascaraMatricula(v){
   const d = v.replace(/\D/g,"").slice(0,6);
@@ -178,27 +251,77 @@ for(let i = 0; i < PADRAO.length; i++){          /* começa só com as linhas do
   matriz.appendChild(linha);
 }
 
-/* botões de cada linha: subir, descer e remover (a linha removida vai para o fim) */
+/* ---------- cadeado da linha ---------- */
+/* Linha travada não se move, não é removida, não recebe nem entrega blocos.
+   O texto dos campos dela continua editável, e as marcações também. */
+const travada = l => !!l && l.classList.contains("travada");
+
+/* Para onde a linha `i` vai ao subir. Vizinha destravada: troca simples.
+   Vizinha travada: salta o bloco contíguo de travadas e para logo abaixo da
+   primeira destravada acima. Tudo travado acima: não há para onde ir. */
+function alvoSubir(ls, i){
+  if(i <= 0 || travada(ls[i])) return null;
+  let j = i - 1;
+  if(!travada(ls[j])) return j;
+  while(j >= 0 && travada(ls[j])) j--;
+  return j < 0 ? null : j + 1;
+}
+function alvoDescer(ls, i){
+  if(i < 0 || i >= ls.length - 1 || travada(ls[i])) return null;
+  let j = i + 1;
+  if(!travada(ls[j])) return j;
+  while(j < ls.length && travada(ls[j])) j++;
+  return j >= ls.length ? null : j - 1;
+}
+function moverLinha(linha, paraCima){
+  const ls = linhas(), i = ls.indexOf(linha);
+  const destino = paraCima ? alvoSubir(ls, i) : alvoDescer(ls, i);
+  if(destino === null) return false;
+  if(paraCima) matriz.insertBefore(linha, ls[destino]);
+  else matriz.insertBefore(linha, ls[destino].nextElementSibling);
+  return true;
+}
+function travar(linha, valor){
+  linha.classList.toggle("travada", valor);
+  realcar(); atualizar(); registrarAgora();
+}
+
+/* Onde o rodapé cria linha: acima do bloco travado do fim.
+   Devolve null quando toda a matriz está travada. */
+function pontoDeInsercao(){
+  const ls = linhas();
+  let j = ls.length - 1;
+  while(j >= 0 && travada(ls[j])) j--;
+  if(j < 0) return null;
+  return ls[j + 1] || rodapeMatriz;
+}
+
+/* botões de cada linha: mover, criar, remover e travar */
 function controlesLinha(){
   const c = document.createElement("div");
   c.className = "ctrl";
   c.innerHTML =
-    '<button type="button" class="mini" data-acao="subir"    title="Subir linha">▲</button>' +
-    '<button type="button" class="mini soVazia" data-acao="duplicar" title="Criar outra linha vazia abaixo desta">⧉</button>' +
-    '<button type="button" class="mini" data-acao="remover"  title="Remover esta linha">🗑</button>' +
+    '<button type="button" class="mini" data-acao="subir" title="Subir linha">▲</button>' +
+    '<button type="button" class="mini soVazia" data-acao="acima" title="Criar linha vazia acima desta">⧉↑</button>' +
+    '<button type="button" class="mini soVazia" data-acao="abaixo" title="Criar linha vazia abaixo desta">⧉↓</button>' +
+    '<button type="button" class="mini" data-acao="remover" title="Remover esta linha">🗑</button>' +
     '<button type="button" class="mini soVazia" data-acao="novo" title="Novo campo livre nesta linha">✎</button>' +
-    '<button type="button" class="mini" data-acao="descer"   title="Descer linha">▼</button>';
+    '<button type="button" class="mini trava" data-acao="travar" aria-pressed="false" title="Travar esta linha">🔓</button>' +
+    '<button type="button" class="mini" data-acao="descer" title="Descer linha">▼</button>';
   c.addEventListener("click", ev => {
     const b = ev.target.closest("button"); if(!b) return;
-    const linha = c.parentElement, ls = linhas(), i = ls.indexOf(linha);
-    const antes = disposicao();
-    if(b.dataset.acao === "subir" && i > 1) matriz.insertBefore(linha, ls[i-1]);
-    else if(b.dataset.acao === "descer" && i > 0 && i < ls.length - 1) matriz.insertBefore(ls[i+1], linha);
-    else if(b.dataset.acao === "remover" && i > 0 && removivel(linha)) removerLinha(linha);
-    else if(b.dataset.acao === "novo"){ criarCampoLivre(linha); return; }
-    else if(b.dataset.acao === "duplicar"){ novaLinha(linha.nextElementSibling, false); return; }
-    else return;
-    sincronizarSeparadores(); garantirNome(); realcar(); atualizar(); registrarAgora();
+    if(b.classList.contains("inerte")) return;      /* botão sem ação neste momento */
+    const linha = c.parentElement;
+    const acao = b.dataset.acao;
+    if(acao === "travar"){ travar(linha, !travada(linha)); return; }
+    if(acao === "novo"){ criarCampoLivre(linha); return; }
+    if(acao === "acima"){ novaLinha(linha, false); return; }
+    if(acao === "abaixo"){ novaLinha(linha.nextElementSibling, false); return; }
+    if(acao === "remover"){ if(removivel(linha)) removerLinha(linha); return; }
+    if(acao === "subir" || acao === "descer"){
+      if(!moverLinha(linha, acao === "subir")) return;
+      sincronizarSeparadores(); realcar(); atualizar(); registrarAgora();
+    }
   });
   return c;
 }
@@ -207,20 +330,23 @@ const rodapeMatriz = document.createElement("div");
 rodapeMatriz.className = "rodapeMatriz";
 rodapeMatriz.innerHTML =
   '<div class="botoesRodape">' +
-  '<button type="button" class="mini" data-nova="vazia" title="Criar uma linha vazia acima (vira espaço na assinatura)">＋ linha</button>' +
+  '<button type="button" class="mini" data-nova="vazia" title="Criar uma linha vazia acima; entre campos preenchidos, ela abre um respiro">＋ linha</button>' +
   '<button type="button" class="mini" data-nova="livre" title="Criar uma linha com um campo livre acima">✎ campo livre</button>' +
-  '</div>';
+  '</div>' +
+  '<p class="aviso tudoTravado hide" role="status" aria-live="polite">Todas as linhas estão travadas. Destrave alguma para criar linha nova.</p>';
 /* a dica desta barra fica logo acima dos botões */
 rodapeMatriz.insertBefore(el("ajudaRodape"), rodapeMatriz.firstChild);
 rodapeMatriz.addEventListener("click", ev => {
   const b = ev.target.closest("button"); if(!b) return;
-  novaLinha(rodapeMatriz, b.dataset.nova === "livre");
+  const onde = pontoDeInsercao();
+  if(!onde) return;                     /* matriz toda travada: os botões já estão desabilitados */
+  novaLinha(onde, b.dataset.nova === "livre");
 });
 matriz.appendChild(rodapeMatriz);
 
 defs.forEach(d => { document.body.appendChild(criarTile(d)); }); /* criados soltos e posicionados a seguir */
 sincronizarSeparadores();
-aplicar(PADRAO, false);
+aplicar(PADRAO, false, false, undefined, TRAVAS_PADRAO);
 
 /* faixas finas entre as linhas: soltar ali abre uma linha nova naquele ponto */
 function sincronizarSeparadores(){
@@ -234,42 +360,19 @@ function sincronizarSeparadores(){
   });
 }
 
-/* linhas vazias seguidas viram uma só; as sobrando vão para o fim */
-function compactar(){
-  /* linhas vazias no meio são espaços propositais e ficam onde estão;
-     só o excesso depois do último campo é ajustado */
-  const antes = linhas().length;
-  ajustarVazias();
-  if(linhas().length !== antes) sincronizarSeparadores();
-}
-
-/* garante ao menos uma linha livre no fim; as demais quem controla é a pessoa — nem sobra de linhas vazias, nem falta espaço */
-function ajustarVazias(){
-  const conta = () => {
-    const ls = linhas(); let n = 0;
-    for(let i = ls.length - 1; i >= 0 && blocos(ls[i]).length === 0; i--) n++;
-    return n;
-  };
-  let n = conta();
-  while(n < VAZIAS_MIN && linhas().length < LINHAS){
-    const l = document.createElement("div");
-    l.className = "linha";
-    l.appendChild(controlesLinha());
-    matriz.insertBefore(l, rodapeMatriz);
-    n++;
-  }
-  realcar();                      /* a linha recém-criada precisa das classes na hora */
-}
-
-/* usa a última linha vazia para abrir espaço no ponto indicado */
+/* abre espaço no ponto indicado, com uma linha nova.
+   Só no limite de linhas é que uma vazia já existente é reaproveitada:
+   fora disso, mover um bloco não pode roubar o espaço que a pessoa deixou em outro lugar. */
 function abrirLinhaEm(separador){
   const ls = linhas();
-  let vazia = [...ls].reverse().find(l => blocos(l).length === 0);
-  if(!vazia){                                   /* sem linha vazia sobrando: cria uma */
-    if(ls.length >= LINHAS) return null;
+  let vazia = null;
+  if(ls.length < LINHAS){
     vazia = document.createElement("div");
     vazia.className = "linha";
     vazia.appendChild(controlesLinha());
+  } else {
+    vazia = [...ls].reverse().find(l => blocos(l).length === 0 && !travada(l));
+    if(!vazia) return null;
   }
   matriz.insertBefore(vazia, separador);
   sincronizarSeparadores();
@@ -278,50 +381,59 @@ function abrirLinhaEm(separador){
 
 function criarTile(d){
   const t = document.createElement("div");
-  t.className = "tile" + (d.fixo ? " fixo" : "");
+  t.className = "tile" + (d.obrigatorio ? " obrigatorio" : "");
   t.dataset.id = d.id;
   t.innerHTML =
     '<div class="cab"><span>' + d.rotulo +
-      (d.fixo ? "" : ' <span class="alca" tabindex="0" role="button" aria-label="Mover ' + d.rotulo + '">⠿</span>') + '</span>' +
-    '<span class="opcs">' +
-      (d.tel ? '<label class="marc" title="Tratar como celular"><input type="checkbox" autocomplete="off" id="m_' + d.id + '"' + (d.modoCel ? " checked" : "") + '><span class="longo">Celular</span><span class="curto">Cel</span></label>' +
-               '<label class="marc" title="Gerar link do WhatsApp"><input type="checkbox" autocomplete="off" id="w_' + d.id + '"' + (d.zap ? " checked" : "") + '><span class="longo">WhatsApp</span><span class="curto">Zap</span></label>' : '') +
-      (d.caixa ? '<label class="marc" title="Caixa alta"><input type="checkbox" autocomplete="off" id="c_' + d.id + '"' + (d.caixaPadrao ? " checked" : "") + '><span class="longo">Caixa alta</span><span class="curto">AA</span></label>' : '') +
-      '<label class="marc" title="Negrito"><input type="checkbox" autocomplete="off" id="b_' + d.id + '"' + (d.negrito ? " checked" : "") + '><span class="longo">Negrito</span><span class="curto">N</span></label>' +
+      ' <span class="alca" tabindex="0" role="button" aria-label="Mover ' + d.rotulo +
+      '" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"' +
+      ' title="Arraste, ou use as setas do teclado para mover este campo">⠿</span></span>' +
+    '<span class="fim">' +
+      '<button type="button" class="mini abrir" aria-expanded="false" title="Mostrar opções deste campo">⌄</button>' +
       '<button type="button" class="mini limpar" title="Apagar conteúdo deste campo">🗑</button>' +
     '</span></div>' +
-    (d.livre ? '<input type="text" class="tituloLivre" id="t_' + d.id + '" name="t_' + d.id + '" autocomplete="off" aria-label="Título do campo livre" placeholder="' + d.dicaTitulo + '">' : '') +
-    '<input type="text" id="' + d.id + '" name="' + d.id + '" autocomplete="' + autoDe(d.id) + '" aria-label="' + d.rotulo + '" placeholder="' + d.dica + '">';
+    '<div class="opcs">' +
+      /* Posição fixa, sempre na mesma ordem, encostada à direita: Aa, WhatsApp, máscara,
+         negrito e itálico. Assim os sinais que todo campo tem, N e I, ficam sempre no
+         mesmo lugar, e os que faltam abrem espaço à esquerda em vez de embaralhar a fila. */
+      (d.numero ? "" : sinalMarc("c", d.id, d.caixaPadrao, "Caixa alta", '<span class="sinal caixa">Aa</span>')) +
+      (d.tel ? sinalMarc("w", d.id, d.zap, "Gerar link do WhatsApp", '<span class="sinal">' + SINAL_ZAP + '</span>', "zap") : "") +
+      (d.mascaraOpcional ? sinalMarc("k", d.id, d.mascaraPadrao, TITULO_MASCARA, '<span class="sinal mascara">' + SINAL_MASCARA + '</span>', "mascara") : "") +
+      sinalMarc("b", d.id, d.negrito, "Negrito", '<span class="sinal grosso">N</span>') +
+      sinalMarc("i", d.id, d.italico, "Itálico", '<span class="sinal inclinado">I</span>') +
+    '</div>' +
+    (d.livre ? '<input type="text" class="tituloLivre" id="' + PRE + 't_' + d.id + '" name="' + PRE + 't_' + d.id + '" autocomplete="off" aria-label="Título do campo livre" placeholder="' + d.dicaTitulo + '">' : '') +
+    '<input type="text" id="' + PRE + d.id + '" name="' + PRE + d.id + '" autocomplete="' + autoDe(d.id) + '" aria-label="' + d.rotulo + '" placeholder="' + d.dica + '">';
+
+  /* as marcações ficam recolhidas; a setinha as revela quando forem precisas */
+  const abrir = t.querySelector(".abrir");
+  abrir.addEventListener("click", () => {
+    const aberto = t.classList.toggle("aberto");
+    abrir.setAttribute("aria-expanded", aberto ? "true" : "false");
+    abrir.title = aberto ? "Ocultar opções deste campo" : "Mostrar opções deste campo";
+  });
 
   t.querySelector(".limpar").addEventListener("click", () => {
-    el(d.id).value = "";
-    if(el("t_" + d.id)) el("t_" + d.id).value = "";
+    campo(d.id).value = "";
+    if(tituloEl(d.id)) tituloEl(d.id).value = "";
     atualizar();
   });
   const livre = t.querySelector(".tituloLivre");
   if(livre) livre.addEventListener("input", atualizar);
   t.querySelector("input[type=text]:not(.tituloLivre)").addEventListener("input", e => {
     if(d.mascara === "mat") e.target.value = mascaraMatricula(e.target.value);
-    if(d.tel && modoCelular(d.id)) e.target.value = mascaraTelefone(e.target.value);
+    if(comMascara(d.id)) e.target.value = mascaraTelefone(e.target.value);
     atualizar();
   });
   t.querySelectorAll(".marc input").forEach(c => c.addEventListener("change", () => {
     if(d.tel){
-      const zap = t.querySelector('#w_' + d.id);
-      const cel = modoCelular(d.id);
-      zap.disabled = !cel;
-      zap.parentElement.style.opacity = cel ? 1 : .4;
-      if(!cel) zap.checked = false;
       const txt = t.querySelector("input[type=text]");
-      if(cel) txt.value = mascaraTelefone(txt.value);
+      if(comMascara(d.id)) txt.value = mascaraTelefone(txt.value);
+      ajustarCampoTel(d);
     }
     atualizar();
   }));
-  if(d.tel){
-    const zap = t.querySelector('#w_' + d.id);
-    zap.disabled = !d.modoCel;
-    zap.parentElement.style.opacity = d.modoCel ? 1 : .4;
-  }
+  if(d.tel) setTimeout(() => ajustarCampoTel(d), 0);   /* o bloco ainda não está no documento */
 
   const alca = t.querySelector(".alca");
   if(alca){
@@ -331,24 +443,25 @@ function criarTile(d){
   return t;
 }
 
-/* devolve os campos que a disposição pede e que foram apagados */
-function garantirCampos(disp){
+/* devolve os campos que a disposição pede e que foram apagados.
+   `livres` marca quais ids eram campos livres, quando a informação vem de um estado guardado */
+function garantirCampos(disp, livres){
   disp.flat().forEach(id => {
     if(tile(id)) return;
     let base = DEFS_BASE.find(d => d.id === id);
-    if(!base && /^livre\d+$/.test(id)){
-      base = { id, rotulo:"Campo livre", titulo:"", dica:"Conteúdo", dicaTitulo:"Título (opcional)", livre:true };
-    }
+    if(!base && (livres ? livres.has(id) : RE_LIVRE.test(id))) base = defLivre(id);
     if(!base) return;
     if(!porId[id]){ defs.push(base); porId[id] = base; }
     document.body.appendChild(criarTile(base));
+    const n = RE_LIVRE.exec(id);
+    if(n && +n[1] > contadorLivre) contadorLivre = +n[1];
   });
 }
 
 /* volta ao conjunto original de campos: os livres criados depois somem */
 function descartarExtras(disp){
   const previstos = new Set(disp.flat());
-  defs.filter(d => d.livre && !previstos.has(d.id)).forEach(d => {
+  defs.filter(d => livreExtra(d.id) && !previstos.has(d.id)).forEach(d => {
     const t = tile(d.id);
     if(t) t.remove();
     defs = defs.filter(x => x.id !== d.id);
@@ -358,8 +471,9 @@ function descartarExtras(disp){
   linhas().slice(PADRAO.length).forEach(l => { if(blocos(l).length === 0) l.remove(); });
 }
 
-/* uma linha some de vez quando está vazia ou só tem campos livres criados aqui */
+/* uma linha some de vez quando está destravada e ou está vazia, ou só tem campos livres */
 function removivel(linha){
+  if(travada(linha)) return false;
   const bs = blocos(linha);
   return bs.length === 0 || bs.every(t => porId[t.dataset.id] && porId[t.dataset.id].livre);
 }
@@ -371,7 +485,7 @@ function removerLinha(linha){
     t.remove();
   });
   linha.remove();
-  sincronizarSeparadores(); garantirNome(); realcar(); atualizar(); registrarAgora();
+  sincronizarSeparadores(); realcar(); atualizar(); registrarAgora();
 }
 
 /* ---------- criação de linhas ---------- */
@@ -389,30 +503,36 @@ function novaLinha(antesDe, comCampoLivre){
 /* ---------- campos livres extras ---------- */
 let contadorLivre = 1;
 function criarCampoLivre(linha){
-  if(blocos(linha).length >= COLS) return;
+  if(blocos(linha).length >= COLS || travada(linha)) return;
   contadorLivre++;
-  const d = {
-    id: "livre" + contadorLivre, rotulo: "Campo livre", titulo: "",
-    dica: "Conteúdo", dicaTitulo: "Título (opcional)", livre: true
-  };
+  while(porId["livre" + contadorLivre]) contadorLivre++;   /* nunca reaproveita um id em uso */
+  const d = defLivre("livre" + contadorLivre);
   defs.push(d);
   porId[d.id] = d;
   linha.appendChild(criarTile(d));
-  garantirNome(); sincronizarSeparadores(); realcar(); atualizar(); registrarAgora();
-  const campo = el("t_" + d.id);
-  if(campo) campo.focus();
+  sincronizarSeparadores(); realcar(); atualizar(); registrarAgora();
+  const caixa = tituloEl(d.id);
+  if(caixa) caixa.focus();
 }
 
 /* ---------- disposição ---------- */
 function disposicao(){
   return linhas().map(l => blocos(l).map(t => t.dataset.id));
 }
+/* estado dos cadeados, uma posição por linha, na mesma ordem da disposição */
+function travas(){ return linhas().map(travada); }
+function aplicarTravas(lista){
+  if(!lista) return;
+  linhas().forEach((l, i) => l.classList.toggle("travada", !!lista[i]));
+}
 function tile(id){ return document.querySelector('.tile[data-id="' + id + '"]'); }
 
-function aplicar(disp, registrar = true, limparExtras = false){
-  if(registrar) registrarHistorico();
+/* `comHistorico` não se chama `registrar` de propósito: o nome sombrearia a função de histórico */
+function aplicar(disp, comHistorico = true, limparExtras = false, livres, listaTravas){
+  if(comHistorico) registrarHistorico();
+  linhas().forEach(l => l.classList.remove("travada"));   /* as travas do estado novo entram no fim */
   if(limparExtras) descartarExtras(disp);
-  garantirCampos(disp);
+  garantirCampos(disp, livres);
   /* os blocos são movidos (nunca recriados), para não perder estado nem ouvintes */
   const usados = new Set();
   while(linhas().length < disp.length && linhas().length < LINHAS){   /* recria as linhas que o estado tinha */
@@ -431,7 +551,7 @@ function aplicar(disp, registrar = true, limparExtras = false){
     if(usados.has(d.id)) return;
     const t = tile(d.id);
     if(!t) return;
-    /* campos livres criados depois vão para linhas próprias no fim, nunca para a linha do Nome */
+    /* campos livres criados depois vão para linhas próprias no fim */
     const ls = linhas();
     let destino = ls.slice(1).find(l => blocos(l).length === 0);
     if(!destino){
@@ -449,7 +569,7 @@ function aplicar(disp, registrar = true, limparExtras = false){
     ultima.remove();
   }
   sincronizarSeparadores();
-  garantirNome();
+  aplicarTravas(listaTravas);
   realcar();
   atualizar();
 }
@@ -460,16 +580,18 @@ function estadoAtual(){
   const campos = {};
   defs.forEach(d => {
     campos[d.id] = {
-      v: el(d.id) ? el(d.id).value : "",
-      t: el("t_" + d.id) ? el("t_" + d.id).value : "",
-      b: !!(el("b_" + d.id) && el("b_" + d.id).checked),
-      c: !!(el("c_" + d.id) && el("c_" + d.id).checked),
-      m: !!(el("m_" + d.id) && el("m_" + d.id).checked),
-      w: !!(el("w_" + d.id) && el("w_" + d.id).checked)
+      v: campo(d.id) ? campo(d.id).value : "",
+      t: tituloEl(d.id) ? tituloEl(d.id).value : "",
+      b: !!(marca("b", d.id) && marca("b", d.id).checked),
+      c: !!(marca("c", d.id) && marca("c", d.id).checked),
+      i: !!(marca("i", d.id) && marca("i", d.id).checked),
+      k: !!(marca("k", d.id) && marca("k", d.id).checked),
+      w: !!(marca("w", d.id) && marca("w", d.id).checked),
+      livre: !!d.livre                       /* o estado guarda o que o campo é, sem depender do nome do id */
     };
   });
   return JSON.stringify({
-    campos, layout: disposicao(),
+    campos, layout: disposicao(), travas: travas(),
     logo: logoEscolhido,
     cor: el("cor").value, esp: el("espessura").value,
     tm: el("titMostrar").checked, tn: el("titNegrito").checked
@@ -479,23 +601,17 @@ function estadoAtual(){
 function aplicarEstado(txt){
   const e = JSON.parse(txt);
   restaurando = true;
-  /* recria campos livres que existiam no estado guardado */
-  e.layout.flat().forEach(id => {
-    if(porId[id] || !/^livre\d+$/.test(id)) return;
-    const d = { id, rotulo:"Campo livre", titulo:"", dica:"Conteúdo", dicaTitulo:"Título (opcional)", livre:true };
-    defs.push(d); porId[id] = d;
-    document.body.appendChild(criarTile(d));
-    const n = parseInt(id.replace("livre",""), 10);
-    if(n > contadorLivre) contadorLivre = n;
-  });
+  /* recria TODOS os campos do estado guardado que já não existem, antes de repor os valores;
+     fazer isso depois devolveria o campo em branco */
+  const livres = new Set(Object.keys(e.campos).filter(id => e.campos[id].livre));
+  garantirCampos(e.layout, livres);
   Object.keys(e.campos).forEach(id => {          /* usa o que o estado guardou, não a lista atual */
     const d = porId[id]; if(!d) return;
     const s = e.campos[id];
-    if(el(d.id)) el(d.id).value = s.v;
-    if(el("t_" + d.id)) el("t_" + d.id).value = s.t || "";
-    ["b","c","m","w"].forEach(k => { const c = el(k + "_" + d.id); if(c) c.checked = s[k]; });
-    const w = el("w_" + d.id);
-    if(w){ w.disabled = !s.m; w.parentElement.style.opacity = s.m ? 1 : .4; }
+    if(campo(d.id)) campo(d.id).value = s.v;
+    if(tituloEl(d.id)) tituloEl(d.id).value = s.t || "";
+    ["b","c","i","k","w"].forEach(k => { const c = marca(k, d.id); if(c) c.checked = !!s[k]; });
+    if(d.tel) ajustarCampoTel(d);
   });
   if(e.logo && e.logo !== logoEscolhido){ logoEscolhido = e.logo; montarLogos(); }
   el("cor").value = e.cor;
@@ -510,9 +626,9 @@ function aplicarEstado(txt){
     const id = t.dataset.id;
     if(previstos.has(id)) return;
     t.remove();
-    if(/^livre\d+$/.test(id)){ defs = defs.filter(x => x.id !== id); delete porId[id]; }
+    if(livreExtra(id)){ defs = defs.filter(x => x.id !== id); delete porId[id]; }
   });
-  aplicar(e.layout, false);
+  aplicar(e.layout, false, false, livres, e.travas);
   restaurando = false;
   atualizar();
 }
@@ -521,6 +637,7 @@ function registrar(){                     /* guarda o estado atual, agrupando di
   if(restaurando) return;
   clearTimeout(agendado);
   agendado = setTimeout(() => {
+    agendado = null;
     const e = estadoAtual();
     if(pilha[indice] === e) return;
     pilha = pilha.slice(0, indice + 1);
@@ -533,13 +650,16 @@ function botoesHistorico(){
   el("btnDesfazer").disabled = indice <= 0;
   el("btnRefazer").disabled = indice >= pilha.length - 1;
 }
-function desfazer(){ if(indice > 0){ indice--; aplicarEstado(pilha[indice]); botoesHistorico(); } }
-function refazer(){ if(indice < pilha.length - 1){ indice++; aplicarEstado(pilha[indice]); botoesHistorico(); } }
+/* fecha o agrupamento da digitação: sem isso, desfazer logo depois de digitar
+   descartaria o trecho recém-escrito, que ainda não tinha entrado na pilha */
+function firmar(){ if(agendado){ clearTimeout(agendado); agendado = null; registrarAgora(); } }
+function desfazer(){ firmar(); if(indice > 0){ indice--; aplicarEstado(pilha[indice]); botoesHistorico(); } }
+function refazer(){ firmar(); if(indice < pilha.length - 1){ indice++; aplicarEstado(pilha[indice]); botoesHistorico(); } }
 
 /* ações indivisíveis (arrastar, mover, restaurar, marcar) entram no histórico na hora */
 function registrarAgora(){
   if(restaurando) return;
-  clearTimeout(agendado);
+  clearTimeout(agendado); agendado = null;
   const e = estadoAtual();
   if(pilha[indice] === e) return;
   pilha = pilha.slice(0, indice + 1);
@@ -548,22 +668,45 @@ function registrarAgora(){
   botoesHistorico();
 }
 const registrarHistorico = registrarAgora;
-function garantirNome(){
-  const n = tile("nome"), primeira = linhas()[0];
-  if(!n || !primeira) return;
-  if(n.parentElement !== primeira || blocos(primeira)[0] !== n) primeira.insertBefore(n, blocos(primeira)[0] || null);
-}
+/* O Nome não é mais preso por código: quem protege a primeira linha é o cadeado,
+   que vem fechado na estrutura padrão. */
 function realcar(){
-  linhas().forEach(l => {
+  const ls = linhas();
+  ls.forEach((l, i) => {
+    const vazia = blocos(l).length === 0;
+    const presa = travada(l);
     l.classList.toggle("cheia", blocos(l).length >= COLS);
-    l.classList.toggle("semnada", blocos(l).length === 0);
+    l.classList.toggle("semnada", vazia);
     l.classList.toggle("removivel", removivel(l));
+    /* Botão sem ação possível ganha "inerte": na linha vazia ele fica visível e apagado,
+       para não desalinhar a fileira; na linha com campos, some. Quem faz isso é o CSS. */
+    const inerte = (acao, sim) => {
+      const b = l.querySelector('.ctrl .mini[data-acao="' + acao + '"]');
+      if(b){ b.classList.toggle("inerte", sim); b.disabled = sim; }
+    };
+    inerte("subir",   alvoSubir(ls, i) === null);
+    inerte("descer",  alvoDescer(ls, i) === null);
+    inerte("remover", presa || !removivel(l));
+    inerte("novo",    presa || blocos(l).length >= COLS);
+    const cad = l.querySelector('.ctrl .mini[data-acao="travar"]');
+    if(cad){
+      cad.textContent = presa ? "🔒" : "🔓";
+      cad.title = presa ? "Destravar esta linha" : "Travar esta linha";
+      cad.setAttribute("aria-pressed", presa ? "true" : "false");
+      cad.setAttribute("aria-label", (presa ? "Destravar" : "Travar") + " linha " + (i + 1));
+    }
   });
+  /* rodapé: sem nenhuma linha destravada não há onde criar */
+  const semLugar = !pontoDeInsercao();
+  rodapeMatriz.querySelectorAll("[data-nova]").forEach(b => { b.disabled = semLugar; });
+  const nota = rodapeMatriz.querySelector(".tudoTravado");
+  if(nota) nota.classList.toggle("hide", !semLugar);
 }
 
 /* ---------- arrasto (mouse, caneta e toque) ---------- */
 function iniciarArrasto(ev, t){
   if(ev.button !== undefined && ev.button !== 0) return;
+  if(travada(t.parentElement)) return;        /* bloco de linha travada não sai do lugar */
   ev.preventDefault();
   /* ouvintes no documento: mover o bloco no DOM cancela a captura de ponteiro em alguns navegadores */
   arrastado = t; linhaOrigem = t.parentElement;
@@ -597,22 +740,22 @@ function iniciarArrasto(ev, t){
         nova.appendChild(t);
         linhaAberta = nova;
         devolverLinhaAberta(anterior);        /* não deixa rastro de linhas vazias pelo caminho */
-        garantirNome(); realcar();
+      realcar();
       }
       return;
     }
     matriz.querySelectorAll(".entre").forEach(s => s.classList.remove("alvo"));
 
     const linha = alvo.closest(".linha");
-    linhas().forEach(l => l.classList.toggle("alvo", l === linha));
-    if(!linha) return;
+    linhas().forEach(l => l.classList.toggle("alvo", l === linha && !travada(l)));
+    if(!linha || travada(linha)) return;        /* linha travada não recebe blocos */
     if(linha !== t.parentElement && blocos(linha).length >= COLS) return;
     const ref = posicao(linha, e.clientX);
     const anterior = linhaAberta;
     if(ref === null){ if(t.parentElement !== linha || blocos(linha)[blocos(linha).length-1] !== t) linha.appendChild(t); }
     else if(ref !== t.nextSibling) linha.insertBefore(t, ref);
     if(linha !== linhaAberta){ linhaAberta = null; devolverLinhaAberta(anterior); }
-    garantirNome();
+
     realcar();
   };
   const soltar = () => {
@@ -622,16 +765,12 @@ function iniciarArrasto(ev, t){
     t.classList.remove("arrastando");
     document.body.classList.remove("arrastando");
     matriz.querySelectorAll(".alvo").forEach(l => l.classList.remove("alvo"));
-    /* a linha de onde o bloco saiu, se esvaziou, some: não vira espaço nem sobra no fim */
-    if(linhaOrigem && linhaOrigem !== t.parentElement && linhaOrigem.isConnected && blocos(linhaOrigem).length === 0){
-      linhaOrigem.remove();
-      sincronizarSeparadores();
-    }
-    compactar();
-    garantirNome();
+    /* a linha de onde o bloco saiu FICA, mesmo vazia: quem decide eliminá-la é a pessoa, pela lixeira.
+       Linha vazia no meio é espaço na assinatura, e isso costuma ser proposital. */
+
     realcar();
     if(JSON.stringify(antes) !== JSON.stringify(disposicao())) registrarAgora();
-    arrastado = null;
+    arrastado = null; linhaOrigem = null;
     atualizar();
   };
   document.addEventListener("pointermove", mover);
@@ -647,23 +786,88 @@ function posicao(linha, x){
   return null;
 }
 
-/* ---------- teclado: Alt + setas ---------- */
+/* ---------- teclado na alça ---------- */
+/* Enter e Espaço não arrastam nada: dizem em voz alta como se move o campo */
 function teclado(ev, t){
+  if(ev.key === "Enter" || ev.key === " "){
+    ev.preventDefault();
+    avisar("Use as setas do teclado para mover " + (porId[t.dataset.id] || {}).rotulo + ".");
+    return;
+  }
   if(!ev.key.startsWith("Arrow")) return;   /* com a alça em foco, as setas já movem */
   const ls = linhas();
   const linha = t.parentElement, i = ls.indexOf(linha);
+  if(travada(linha)){
+    ev.preventDefault();
+    avisar("Linha travada: destrave o cadeado para mover este campo.");
+    return;
+  }
   const irmaos = blocos(linha), j = irmaos.indexOf(t);
+  /* vizinha na vertical: a primeira destravada naquele sentido */
+  const vizinha = passo => {
+    let k = i + passo;
+    while(k >= 0 && k < ls.length && travada(ls[k])) k += passo;
+    return (k >= 0 && k < ls.length) ? ls[k] : null;
+  };
+  const acima = vizinha(-1), abaixo = vizinha(1);
   let agiu = true;
-  if(ev.key === "ArrowLeft" && j > 0 && !(i === 0 && j === 1)) linha.insertBefore(t, irmaos[j-1]);
+  if(ev.key === "ArrowLeft" && j > 0) linha.insertBefore(t, irmaos[j-1]);
   else if(ev.key === "ArrowRight" && j < irmaos.length - 1) linha.insertBefore(irmaos[j+1], t);
-  else if(ev.key === "ArrowUp" && i > 0 && blocos(ls[i-1]).length < COLS) ls[i-1].appendChild(t);
-  else if(ev.key === "ArrowDown" && i < ls.length - 1 && blocos(ls[i+1]).length < COLS) ls[i+1].appendChild(t);
+  else if(ev.key === "ArrowUp" && acima && blocos(acima).length < COLS) acima.appendChild(t);
+  else if(ev.key === "ArrowDown" && abaixo && blocos(abaixo).length < COLS) abaixo.appendChild(t);
   else agiu = false;
   ev.preventDefault();   /* evita rolar a página com as setas */
   if(!agiu) return;
   registrarHistorico();
-  garantirNome(); realcar(); atualizar(); registrarAgora();
+  realcar(); atualizar(); registrarAgora();
   t.querySelector(".alca").focus();
+  const ls2 = linhas(), li = ls2.indexOf(t.parentElement);
+  avisar((porId[t.dataset.id] || {}).rotulo + ": linha " + (li + 1) + ", posição " + (blocos(t.parentElement).indexOf(t) + 1) + ".");
+}
+
+/* ---------- escolhas ---------- */
+/* Não há mais quadradinho à vista: o que mostra a opção em uso é a caixa em volta.
+   A classe entra por aqui, e não por :has(), porque a marcação também muda por código. */
+function sincronizarEscolhas(){
+  document.querySelectorAll(".marc, .opc").forEach(l => {
+    const i = l.querySelector("input");
+    if(!i || i.type === "range") return;
+    l.classList.toggle("escolhida", !!i.checked);
+    l.classList.toggle("desabilitada", !!i.disabled);
+  });
+  avisarMarcas();
+}
+
+/* Com as marcações recolhidas, a setinha precisa dizer que há algo fora do comum
+   naquele campo: um ponto, e a lista no title. */
+const NOMES_MARCA = { c:"Caixa alta", b:"Negrito", i:"Itálico", w:"WhatsApp" };
+function avisarMarcas(){
+  defs.forEach(d => {
+    const t = tile(d.id); if(!t) return;
+    const b = t.querySelector(".abrir"); if(!b) return;
+    const ligada = k => { const c = marca(k, d.id); return !!(c && c.checked); };
+    const mudou = [];
+    if(marca("c", d.id) && ligada("c") !== !!d.caixaPadrao) mudou.push(NOMES_MARCA.c);
+    if(ligada("b") !== !!d.negrito) mudou.push(NOMES_MARCA.b);
+    if(ligada("i") !== !!d.italico) mudou.push(NOMES_MARCA.i);
+    if(marca("w", d.id) && ligada("w") !== !!d.zap) mudou.push(NOMES_MARCA.w);
+    if(marca("k", d.id) && !ligada("k")) mudou.push("sem máscara");
+    b.classList.toggle("temMarca", mudou.length > 0);
+    const aberto = t.classList.contains("aberto");
+    b.title = (aberto ? "Ocultar opções deste campo" : "Mostrar opções deste campo")
+            + (mudou.length ? " (" + mudou.join(", ") + ")" : "");
+  });
+}
+document.addEventListener("change", sincronizarEscolhas);
+
+/* recado curto para leitor de tela; a região fica fora da vista */
+let avisoTempo = null;
+function avisar(texto){
+  const r = el("avisoTeclado");
+  if(!r) return;
+  r.textContent = texto;
+  clearTimeout(avisoTempo);
+  avisoTempo = setTimeout(() => { r.textContent = ""; }, 4000);
 }
 
 el("btnDesfazer").addEventListener("click", desfazer);
@@ -676,12 +880,14 @@ document.addEventListener("keydown", ev => {
 });
 function apagarConteudos(){
   defs.forEach(d => {
-    if(el("t_" + d.id)) el("t_" + d.id).value = "";
-    el(d.id).value = "";
-    const b = el("b_" + d.id); if(b) b.checked = !!d.negrito;
-    const c = el("c_" + d.id); if(c) c.checked = !!d.caixaPadrao;
-    const m = el("m_" + d.id); if(m) m.checked = !!d.modoCel;
-    const w = el("w_" + d.id); if(w){ w.checked = !!d.zap; w.disabled = !d.modoCel; w.parentElement.style.opacity = d.modoCel ? 1 : .4; }
+    if(tituloEl(d.id)) tituloEl(d.id).value = "";
+    if(campo(d.id)) campo(d.id).value = "";
+    const b = marca("b", d.id); if(b) b.checked = !!d.negrito;
+    const c = marca("c", d.id); if(c) c.checked = !!d.caixaPadrao;
+    const i = marca("i", d.id); if(i) i.checked = !!d.italico;
+    const k = marca("k", d.id); if(k) k.checked = true;      /* a máscara volta ligada */
+    const w = marca("w", d.id); if(w) w.checked = !!d.zap;
+    if(d.tel) ajustarCampoTel(d);
   });
   atualizar();
 }
@@ -697,15 +903,12 @@ function restaurarBarra(){
 }
 /* o que fugiu do padrão */
 function camposMudaram(){
-  if(defs.some(d => d.livre && !PADRAO.flat().includes(d.id))) return true;
+  if(defs.some(d => livreExtra(d.id))) return true;          /* campo livre criado depois */
   if(DEFS_BASE.some(d => !tile(d.id))) return true;          /* algum campo do padrão foi apagado */
-  const atual = disposicao().filter(l => l.length).map(l => l.join(","));
-  const padrao = PADRAO.filter(l => l.length).map(l => l.join(","));
-  if(atual.length !== padrao.length) return true;
-  /* também considera a linha vazia intencional entre lotação e telefones */
-  const vaziasAtuais = disposicao().slice(0, disposicao().findLastIndex(l => l.length)).filter(l => !l.length).length;
-  const vaziasPadrao = PADRAO.slice(0, PADRAO.length).filter(l => !l.length).length;
-  return atual.some((l, i) => l !== padrao[i]) || vaziasAtuais !== vaziasPadrao;
+  /* comparação literal, linha a linha: uma linha vazia a mais, mesmo no fim, está fora do padrão.
+     Ela aparece na matriz, então precisa ser restaurável. Os cadeados contam junto. */
+  return JSON.stringify(disposicao()) !== JSON.stringify(PADRAO)
+      || JSON.stringify(travas()) !== JSON.stringify(TRAVAS_PADRAO);
 }
 function barraMudou(){
   return logoMudou() || el("cor").value.toUpperCase() !== "#AD841F" || el("espessura").value !== "3"
@@ -722,8 +925,17 @@ const ROTULOS = {
 };
 
 let focoAnterior = null;
+/* enquanto o diálogo está aberto, o resto da página sai do alcance do teclado e do leitor de tela */
+function trancarFundo(trancar){
+  const fundo = document.querySelector(".wrap");
+  if(!fundo) return;
+  if(trancar){ fundo.setAttribute("inert", ""); fundo.setAttribute("aria-hidden", "true"); }
+  else { fundo.removeAttribute("inert"); fundo.removeAttribute("aria-hidden"); }
+}
 function fecharModal(){
+  if(el("modal").classList.contains("hide")) return;
   el("modal").classList.add("hide");
+  trancarFundo(false);
   if(focoAnterior){ focoAnterior.focus(); focoAnterior = null; }
 }
 /* mantém o foco dentro do diálogo enquanto ele estiver aberto */
@@ -744,8 +956,10 @@ function abrirModal(itens){
 
   el("mRestaurar").textContent = itens.length > 1 ? "Restaurar Selecionados" : "Restaurar Selecionado";
   el("mRestaurar").disabled = true;
+  sincronizarEscolhas();
   focoAnterior = document.activeElement;
   el("modal").classList.remove("hide");
+  trancarFundo(true);
   el("mCancelar").focus();                    /* Cancelar é o botão padrão */
 }
 
@@ -761,7 +975,7 @@ el("mOpcoes").addEventListener("change", ev => {
 el("btnPadrao").addEventListener("click", () => {
   const p = podeRestaurar();
   const itens = Object.keys(ROTULOS).filter(k => p[k]);
-  if(!itens.length){ aplicar(PADRAO, true, true); return; }
+  if(!itens.length){ aplicar(PADRAO, true, true, undefined, TRAVAS_PADRAO); return; }
   abrirModal(itens);
 });
 
@@ -770,53 +984,132 @@ el("mRestaurar").addEventListener("click", () => {
   registrarHistorico();
   if(marcado("limpar")) apagarConteudos();
   if(marcado("barra")) restaurarBarra();
-  if(marcado("campos")) aplicar(PADRAO, false, true);
+  if(marcado("campos")) aplicar(PADRAO, false, true, undefined, TRAVAS_PADRAO);
   atualizar();
   fecharModal();
 });
 el("mCancelar").addEventListener("click", fecharModal);
 el("modal").addEventListener("click", ev => { if(ev.target === el("modal")) fecharModal(); });
-document.addEventListener("keydown", ev => { if(ev.key === "Escape") fecharModal(); });
+document.addEventListener("keydown", ev => {
+  if(ev.key !== "Escape") return;
+  /* Esc no aviso de inatividade vale como "continuar": é interação */
+  if(!el("modalTempo").classList.contains("hide")){ pararContagem(); reiniciarOcio(); return; }
+  fecharModal();
+});
 
 /* ---------- conteúdo ---------- */
-function digitado(id){ const i = el(id); return i ? i.value.trim() : ""; }
+function digitado(id){ const i = campo(id); return i ? i.value.trim() : ""; }
 function algoDigitado(){
-  return defs.some(d => digitado(d.id) || (el("t_" + d.id) && el("t_" + d.id).value.trim()));
+  return defs.some(d => digitado(d.id) || (tituloEl(d.id) && tituloEl(d.id).value.trim()));
 }
 /* o campo livre entra pelo título; conteúdo sozinho não aparece */
 function entra(id){ return porId[id].livre ? !!tituloLivre(id) : !!valor(id); }
 function valor(id){ return exemplo ? (EXEMPLO[id] || "") : digitado(id); }
-function negrito(id){ const c = el("b_" + id); return !!(c && c.checked); }
-function caixaAlta(id){ const c = el("c_" + id); return !!(c && c.checked); }
+function negrito(id){ const c = marca("b", id); return !!(c && c.checked); }
+function caixaAlta(id){ const c = marca("c", id); return !!(c && c.checked); }
+function italico(id){ const c = marca("i", id); return !!(c && c.checked); }
+/* estilo embutido, que é o que atravessa cliente de e-mail antigo */
+function estilar(id, html, semNegrito){
+  if(negrito(id) && !semNegrito) html = B(html);
+  if(italico(id)) html = '<span style="font-style:italic">' + html + '</span>';
+  return html;
+}
 
-/* normalização única de telefone brasileiro */
+/* Número brasileiro em forma nacional: DDD + 8 ou 9 algarismos.
+   Não exige que o celular comece por 9: há WhatsApp em linha fixa e em número antigo. */
 function normalizarTelefone(v){
   let d = String(v || "").replace(/\D/g, "");
   if(d.startsWith("55") && d.length > 11) d = d.slice(2);      /* aceita +55 digitado */
-  const ddd = d.slice(0, 2);
   return {
     digitos: d,
-    ddd,
+    ddd: d.slice(0, 2),
     fixoValido: d.length === 10,
-    celularValido: d.length === 11 && d[2] === "9",
+    celularValido: d.length === 11,
+    completo: d.length === 10 || d.length === 11,
     internacional: "55" + d
   };
 }
 
-function modoCelular(id){
-  const c = el("m_" + id);
+/* ---------- número para o wa.me ----------
+   Regra oficial: número completo em formato internacional, só algarismos,
+   sem "+", sem zeros de prefixo, sem parênteses e sem traços. O teto é o da
+   E.164: 15 algarismos. Aqui a entrada pode vir de três jeitos:
+     +55 21 91234-5678  → já internacional, é só limpar
+     0021 21 9...       → 00 é prefixo de discagem internacional, cai fora
+     (21) 91234-5678    → forma nacional, ganha o 55
+     0800 570 0800      → o zero é prefixo nacional; cai o zero e entra o 55
+   Devolve { digitos, valido, motivo }. */
+function paraWhats(v){
+  const bruto = String(v || "").trim();
+  const internacional = /^\s*(\+|00)/.test(bruto);
+  let d = bruto.replace(/\D/g, "");
+  let motivo = "";
+  if(!d) return { digitos:"", valido:false, motivo:"sem número" };
+  /* "2334-0000, ramal 210" colaria o 210 no fim do número e produziria um link errado */
+  if(/[^\d\s()+.\-]/.test(bruto))
+    return { digitos:"", valido:false, motivo:"só algarismos, com o código do país (ex.: +5521912345678)" };
+
+  if(internacional){
+    if(d.startsWith("00")) d = d.slice(2);
+    if(d.length < 8) motivo = "curto demais para um número internacional";
+    else if(d.length > 15) motivo = "passa dos 15 algarismos do padrão internacional";
+    return { digitos: d, valido: !motivo, motivo, internacional: true };
+  }
+
+  /* forma nacional: o zero da frente é prefixo de discagem e cai fora.
+     Sobram 10 ou 11 algarismos, seja DDD + número, seja 0800 e afins. */
+  const semZero = d.replace(/^0+/, "");
+  if(semZero.length === 12 || semZero.length === 13){
+    /* a pessoa digitou o 55 sem o + */
+    return { digitos: semZero, valido: true, motivo: "", internacional: true };
+  }
+  if(semZero.length < 10) motivo = "faltam algarismos: são 10 ou 11, com o DDD";
+  else if(semZero.length > 11) motivo = "algarismos demais para um número brasileiro";
+  return { digitos: motivo ? semZero : "55" + semZero, valido: !motivo, motivo, internacional: false };
+}
+
+/* A máscara vale sempre no Celular, que é sempre um número brasileiro.
+   No Telefone ela é opcional, e o WhatsApp a desliga: ali o número tem de vir
+   em formato internacional, que a máscara brasileira estragaria. */
+function comMascara(id){
+  const d = porId[id];
+  if(!d) return false;
+  if(d.mascaraSempre) return true;              /* Celular: é sempre um número brasileiro */
+  if(!d.mascaraOpcional) return false;          /* campo livre e os de texto: nunca */
+  if(comWhats(id)) return false;
+  const c = marca("k", id);
   return !!(c && c.checked);
 }
 function comWhats(id){
-  const c = el("w_" + id);
-  return modoCelular(id) && !!(c && c.checked);
+  const c = marca("w", id);
+  return !!(c && c.checked);
 }
-/* nada ocupa linha exclusiva: quem manda é a disposição montada na matriz */
-function exclusivo(){ return false; }
+/* o campo muda de exemplo conforme o que está pedindo, e os sinais se excluem:
+   caixa alta é coisa de texto; máscara e WhatsApp são coisa de número. */
+function ajustarCampoTel(d){
+  const txt = campo(d.id);
+  if(!txt) return;
+  const zap = comWhats(d.id);
+  const k = marca("k", d.id), c = marca("c", d.id);
+  const mascarado = comMascara(d.id);
+  txt.placeholder = zap ? "+5521912345678"
+                  : mascarado ? (d.numero ? d.dica : "(21)2334-0000")
+                  : (d.dicaLivre || d.dica);
+  if(k){
+    k.disabled = zap || !!(c && c.checked);   /* WhatsApp e caixa alta afastam a máscara */
+    k.closest(".marc").title = zap
+      ? "Com WhatsApp, o número vai em formato internacional e a máscara não se aplica"
+      : TITULO_MASCARA;
+  }
+  const w = marca("w", d.id);
+  if(w) w.disabled = !!(c && c.checked);
+  if(c) c.disabled = zap || !!(k && k.checked);
+  sincronizarEscolhas();
+}
 
 function tituloLivre(id){
   if(exemplo) return EXEMPLO["t_" + id] || "";
-  const i = el("t_" + id);
+  const i = tituloEl(id);
   return i ? i.value.trim() : "";
 }
 
@@ -824,22 +1117,23 @@ function tituloDe(id, sozinho){
   const d = porId[id];
   if(d.livre){ const t = tituloLivre(id); return t ? esc(t) + " " : ""; }
   if(!d.tel) return sozinho ? d.titulo : (d.curto || "");
-  if(comWhats(id)) return sozinho ? "Celular/WhatsApp: " : "";
-  if(modoCelular(id)) return sozinho ? "Celular: " : "Cel: ";
-  return sozinho ? "Telefone: " : "Tel: ";
+  /* quem decide é o próprio campo; o WhatsApp só acrescenta */
+  if(comWhats(id)) return sozinho ? d.rotulo + "/WhatsApp: " : "";
+  return sozinho ? d.titulo : (d.curto || "");
 }
 
 function conteudo(id){
-  let v = valor(id);
-  if(!v) return "";
-  if(caixaAlta(id)) v = v.toLocaleUpperCase("pt-BR");
+  const bruto = valor(id);
+  if(!bruto) return "";
+  const v = caixaAlta(id) ? bruto.toLocaleUpperCase("pt-BR") : bruto;
   if(porId[id].tel){
     if(!comWhats(id)) return esc(v);                       /* sem WhatsApp: texto puro, sem link */
-    const t = normalizarTelefone(v);
-    if(!t.celularValido) return esc(v);                        /* só vira link se o número for válido */
-    return '<a target="_blank" style="color:#0072CE; text-decoration:none;" href="https://wa.me/' + esc(t.internacional) + '">' + esc(v) + '</a>';
+    const w = paraWhats(bruto);
+    if(!w.valido) return esc(v);                           /* número que não fecha não vira link */
+    return '<a target="_blank" rel="noopener noreferrer" style="color:#0072CE; text-decoration:none;" href="https://wa.me/' + esc(w.digitos) + '">' + esc(v) + '</a>';
   }
-  if(id === "email") return '<a style="color:#0072CE; text-decoration:none;" href="mailto:' + esc(v) + '">' + esc(v) + '</a>';
+  /* o endereço vai no href como foi digitado; a caixa alta muda só o que se lê */
+  if(id === "email") return '<a style="color:#0072CE; text-decoration:none;" href="mailto:' + esc(bruto) + '">' + esc(v) + '</a>';
   return esc(v);
 }
 
@@ -857,7 +1151,7 @@ function corpoHTML(){
     const sozinho = grupo.length === 1;
     const ehNome = sozinho && grupo[0] === "nome";
     const texto = grupo.map(id => {
-      const c = (negrito(id) && !ehNome) ? B(conteudo(id)) : conteudo(id);
+      const c = estilar(id, conteudo(id), ehNome);
       const tit = mostrarTitulo ? tituloDe(id, sozinho) : "";
       if(!tit) return c;
       return (tituloNegrito ? B(tit) : tit) + c;
@@ -873,18 +1167,12 @@ function corpoHTML(){
     if(!linha.length){ saida.push(VAZIA); return; }
     const itens = linha.filter(entra);
     if(!itens.length) return;
-    let grupo = [];
-    itens.forEach(id => {
-      if(exclusivo(id)){ monta(grupo); grupo = []; monta([id]); }
-      else grupo.push(id);
-    });
-    monta(grupo);
+    monta(itens);
   });
-  const linhas = saida;
 
   /* cada linha vazia é um espaço; várias seguidas aumentam o espaço.
      Só as das pontas são descartadas. */
-  const limpo = [...linhas];
+  const limpo = [...saida];
   while(limpo.length && limpo[limpo.length-1] === VAZIA) limpo.pop();
   while(limpo.length && limpo[0] === VAZIA) limpo.shift();
 
@@ -900,7 +1188,7 @@ function gerar(){
     ? '<td width="20">&nbsp;</td><td width="' + esp + '" bgcolor="' + corBarra() + '" style="background-color:' + corBarra() + '; font-size:0; line-height:0;">&nbsp;</td>'
     : '';
   return [
-'<!-- INICIO ASSINATURA -->',
+'<!-- INICIO ASSINATURA | gerador Uerj ' + VERSAO + ' -->',
 '<table role="presentation" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse; table-layout:auto;">',
 '<tbody>',
 '<tr>',
@@ -928,7 +1216,7 @@ corpoHTML(),
 function atualizar(){
   /* nunca reorganiza a matriz enquanto a pessoa digita: mover linhas tira o foco do campo */
   const editando = document.activeElement && matriz.contains(document.activeElement);
-  if(!arrastado && !editando) compactar();
+  if(!arrastado && !editando) realcar();
   exemplo = !algoDigitado();
   el("notaExemplo").style.display = exemplo ? "block" : "none";
   el("preview").innerHTML = gerar();
@@ -937,8 +1225,13 @@ function atualizar(){
   defs.filter(d => d.tel).forEach(d => {
     const bruto = digitado(d.id);
     if(!bruto) return;
-    const t = normalizarTelefone(bruto);
-    if(modoCelular(d.id) && !t.celularValido) faltam.push(d.rotulo + ": celular incompleto");
+    if(comWhats(d.id)){
+      /* com WhatsApp o que vale é o número internacional, não o formato brasileiro */
+      const w = paraWhats(bruto);
+      if(!w.valido) faltam.push(d.rotulo + " para WhatsApp: " + w.motivo);
+    } else if(comMascara(d.id) && !normalizarTelefone(bruto).completo){
+      faltam.push(d.rotulo + " incompleto: faltam algarismos");
+    }
   });
   const mat = digitado("matricula").replace(/\D/g,"");
   if(mat && mat.length < 6) faltam.push("Matrícula incompleta");
@@ -947,11 +1240,12 @@ function atualizar(){
   /* a lixeirinha só aparece em campo com conteúdo */
   defs.forEach(d => {
     const t = tile(d.id); if(!t) return;
-    const cheio = !!digitado(d.id) || !!(el("t_" + d.id) && el("t_" + d.id).value.trim());
+    const cheio = !!digitado(d.id) || !!(tituloEl(d.id) && tituloEl(d.id).value.trim());
     t.querySelector(".limpar").style.display = cheio ? "flex" : "none";
     t.classList.toggle("cheio", cheio);
   });
 
+  sincronizarEscolhas();
   const p = podeRestaurar();
   el("btnPadrao").disabled = !(p.campos || p.barra || p.limpar);
   registrar();
@@ -990,7 +1284,7 @@ el("btnCopiarSeguir").addEventListener("click", copiarCodigo);
 
 /* apaga só o conteúdo dos campos: títulos personalizados, marcações, disposição e barra ficam como estão */
 function limparDados(){
-  defs.forEach(d => { if(el(d.id)) el(d.id).value = ""; });
+  defs.forEach(d => { if(campo(d.id)) campo(d.id).value = ""; });
   atualizar();
 }
 
@@ -1018,9 +1312,59 @@ document.querySelectorAll(".lamp").forEach(b => b.addEventListener("click", () =
   document.querySelectorAll(".lamp").forEach(l => {
     l.classList.toggle("ativo", dicasLigadas);
     l.title = dicasLigadas ? "Ocultar dicas" : "Mostrar dicas";
+    l.setAttribute("aria-expanded", dicasLigadas ? "true" : "false");
+    l.setAttribute("aria-label", dicasLigadas ? "Ocultar dicas" : "Mostrar dicas");
   });
   document.querySelectorAll(".ajuda").forEach(a => a.classList.toggle("hide", !dicasLigadas));
 }));
+
+/* ---------- expurgo por inatividade ---------- */
+/* dado pessoal não fica esquecido numa tela de balcão: sem uso e com campo preenchido,
+   a página avisa, conta o tempo em voz alta e recomeça sozinha */
+const OCIO = 10 * 60 * 1000;      /* silêncio até o aviso */
+const CONTAGEM = 60;              /* segundos de resposta antes de apagar */
+let relogioOcio = null, relogioContagem = null;
+
+/* apaga primeiro, recarrega depois: se a recarga for bloqueada, nada pessoal fica na tela */
+function apagarTudo(){
+  pararContagem();
+  clearTimeout(agendado); agendado = null;
+  limparDados();
+  defs.forEach(d => { if(tituloEl(d.id)) tituloEl(d.id).value = ""; });
+  el("saida").value = "";
+  el("blocoCodigo").classList.add("hide");
+  atualizar();
+  pilha = [estadoAtual()]; indice = 0; botoesHistorico();
+  avisar("Os dados preenchidos foram apagados por inatividade.");
+  try { location.reload(); } catch(e){}
+}
+function pararContagem(){
+  clearInterval(relogioContagem); relogioContagem = null;
+  el("modalTempo").classList.add("hide");
+  trancarFundo(false);
+}
+function abrirContagem(){
+  if(!algoDigitado() || !el("modalTempo").classList.contains("hide")) return;
+  let resta = CONTAGEM;
+  el("tContagem").textContent = resta;
+  el("modalTempo").classList.remove("hide");
+  trancarFundo(true);
+  el("tContinuar").focus();
+  relogioContagem = setInterval(() => {
+    resta--;
+    el("tContagem").textContent = resta;
+    if(resta <= 0) apagarTudo();
+  }, 1000);
+}
+function reiniciarOcio(){
+  if(relogioContagem) return;             /* durante a contagem, só os botões do aviso respondem */
+  clearTimeout(relogioOcio);
+  relogioOcio = algoDigitado() ? setTimeout(abrirContagem, OCIO) : null;
+}
+["pointerdown","keydown","input","change","focusin"].forEach(ev =>
+  document.addEventListener(ev, reiniciarOcio, true));
+el("tContinuar").addEventListener("click", () => { pararContagem(); reiniciarOcio(); });
+el("tApagar").addEventListener("click", apagarTudo);
 
 montarLogos();
 /* os outros selos são conferidos só depois que a página termina de carregar */
