@@ -1,4 +1,4 @@
-/* Assinatura de e-mail Uerj | assinatura.js | versão beta 3 */
+/* Assinatura de e-mail Uerj | assinatura.js | versão beta 13 */
 const LINHAS = 14, COLS = 3, VAZIAS_MIN = 0;   /* o rodapé já cria linhas quando preciso */
 
 let defs = [
@@ -70,10 +70,9 @@ function anotar(id, ok){
 }
 
 function verificarLogos(){
-  /* o primeiro é o padrão e aparece sempre: não gasta requisição testando */
-  LOGOS[0].ok = true;
+  /* confere os três, no máximo uma vez por dia; o padrão continua sempre visível */
   const m = memoria();
-  const testar = LOGOS.slice(1).filter(l => {
+  const testar = LOGOS.filter(l => {
     if(m[l.id] === hoje()){ l.ok = true; marcarLogo(l); return false; }   /* já respondeu hoje */
     return true;
   });
@@ -207,8 +206,12 @@ function controlesLinha(){
 const rodapeMatriz = document.createElement("div");
 rodapeMatriz.className = "rodapeMatriz";
 rodapeMatriz.innerHTML =
+  '<div class="botoesRodape">' +
   '<button type="button" class="mini" data-nova="vazia" title="Criar uma linha vazia acima (vira espaço na assinatura)">＋ linha</button>' +
-  '<button type="button" class="mini" data-nova="livre" title="Criar uma linha com um campo livre acima">✎ campo livre</button>';
+  '<button type="button" class="mini" data-nova="livre" title="Criar uma linha com um campo livre acima">✎ campo livre</button>' +
+  '</div>';
+/* a dica desta barra fica logo acima dos botões */
+rodapeMatriz.insertBefore(el("ajudaRodape"), rodapeMatriz.firstChild);
 rodapeMatriz.addEventListener("click", ev => {
   const b = ev.target.closest("button"); if(!b) return;
   novaLinha(rodapeMatriz, b.dataset.nova === "livre");
@@ -439,6 +442,13 @@ function aplicar(disp, registrar = true, limparExtras = false){
     }
     destino.appendChild(t);
   });
+  /* sobrou linha vazia além do que o estado tinha: descarta */
+  while(linhas().length > disp.length){
+    const ultima = linhas()[linhas().length - 1];
+    if(blocos(ultima).length) break;
+    ultima.remove();
+  }
+  sincronizarSeparadores();
   garantirNome();
   realcar();
   atualizar();
@@ -494,6 +504,14 @@ function aplicarEstado(txt){
   el("titMostrar").checked = e.tm;
   el("titNegrito").checked = e.tn;
   sincronizarPaleta();
+  /* tira o que não existia naquele momento: sem isso o desfazer deixa campos órfãos */
+  const previstos = new Set(e.layout.flat());
+  [...document.querySelectorAll(".tile")].forEach(t => {
+    const id = t.dataset.id;
+    if(previstos.has(id)) return;
+    t.remove();
+    if(/^livre\d+$/.test(id)){ defs = defs.filter(x => x.id !== id); delete porId[id]; }
+  });
   aplicar(e.layout, false);
   restaurando = false;
   atualizar();
@@ -554,7 +572,7 @@ function iniciarArrasto(ev, t){
   /* chamada DEPOIS de mover o bloco: a linha aberta antes, se ficou vazia, volta para o fim */
   const devolverLinhaAberta = anterior => {
     if(anterior && anterior !== linhaAberta && anterior.isConnected && blocos(anterior).length === 0){
-      matriz.insertBefore(anterior, rodapeMatriz);
+      anterior.remove();                       /* linha aberta que não recebeu nada simplesmente some */
       sincronizarSeparadores();
     }
   };
@@ -604,9 +622,9 @@ function iniciarArrasto(ev, t){
     t.classList.remove("arrastando");
     document.body.classList.remove("arrastando");
     matriz.querySelectorAll(".alvo").forEach(l => l.classList.remove("alvo"));
-    /* a linha de onde o bloco saiu, se esvaziou, não vira espaço: vai para o fim */
+    /* a linha de onde o bloco saiu, se esvaziou, some: não vira espaço nem sobra no fim */
     if(linhaOrigem && linhaOrigem !== t.parentElement && linhaOrigem.isConnected && blocos(linhaOrigem).length === 0){
-      matriz.insertBefore(linhaOrigem, rodapeMatriz);
+      linhaOrigem.remove();
       sincronizarSeparadores();
     }
     compactar();
@@ -793,8 +811,8 @@ function comWhats(id){
   const c = el("w_" + id);
   return modoCelular(id) && !!(c && c.checked);
 }
-/* item com WhatsApp ocupa linha exclusiva */
-function exclusivo(id){ return comWhats(id); }
+/* nada ocupa linha exclusiva: quem manda é a disposição montada na matriz */
+function exclusivo(){ return false; }
 
 function tituloLivre(id){
   if(exemplo) return EXEMPLO["t_" + id] || "";
@@ -806,7 +824,7 @@ function tituloDe(id, sozinho){
   const d = porId[id];
   if(d.livre){ const t = tituloLivre(id); return t ? esc(t) + " " : ""; }
   if(!d.tel) return sozinho ? d.titulo : (d.curto || "");
-  if(comWhats(id)) return "Celular/WhatsApp: ";
+  if(comWhats(id)) return sozinho ? "Celular/WhatsApp: " : "";
   if(modoCelular(id)) return sozinho ? "Celular: " : "Cel: ";
   return sozinho ? "Telefone: " : "Tel: ";
 }
@@ -931,6 +949,7 @@ function atualizar(){
     const t = tile(d.id); if(!t) return;
     const cheio = !!digitado(d.id) || !!(el("t_" + d.id) && el("t_" + d.id).value.trim());
     t.querySelector(".limpar").style.display = cheio ? "flex" : "none";
+    t.classList.toggle("cheio", cheio);
   });
 
   const p = podeRestaurar();
@@ -969,23 +988,22 @@ async function copiarCodigo(){
 
 el("btnCopiarSeguir").addEventListener("click", copiarCodigo);
 
-/* limpa só os textos: disposição, marcações e barra continuam como a pessoa deixou */
+/* apaga só o conteúdo dos campos: títulos personalizados, marcações, disposição e barra ficam como estão */
 function limparDados(){
-  defs.forEach(d => { if(el(d.id)) el(d.id).value = ""; if(el("t_" + d.id)) el("t_" + d.id).value = ""; });
+  defs.forEach(d => { if(el(d.id)) el(d.id).value = ""; });
   atualizar();
 }
 
 el("btnCopiarLimpar").addEventListener("click", async () => {
   if(!await copiarCodigo()) return;          /* só apaga se a cópia foi confirmada */
+  registrarAgora();
   limparDados();
   el("blocoCodigo").classList.add("hide");
 });
 
 el("btnRecomecar").addEventListener("click", () => {
-  apagarConteudos();
-  restaurarBarra();
-  aplicar(PADRAO, false, true);
-  atualizar();
+  registrarAgora();
+  limparDados();
   el("blocoCodigo").classList.add("hide");
 });
 

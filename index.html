@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Assinatura de e-mail Uerj | versão beta 3 -->
+<!-- Assinatura de e-mail Uerj | versão beta 13 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -29,7 +29,7 @@
 <meta name="twitter:image" content="https://www.uerj.br/wp-content/uploads/2021/04/Uerj_email_h98.png">
 
 <link rel="preconnect" href="https://www.uerj.br">
-<link rel="stylesheet" href="estilo.css?v=beta3">
+<link rel="stylesheet" href="estilo.css?v=beta13">
 
 <script type="application/ld+json">
 {
@@ -75,11 +75,11 @@
         <b>Espaços:</b> uma linha vazia entre campos vira um respiro na assinatura; duas ou três seguidas aumentam o espaço. Linhas vazias no fim são ignoradas.<br>
         <b>Linhas:</b> ▲ e ▼ movem a linha inteira; 🗑 elimina a linha, disponível nas vazias e nas que só tenham campos livres. A linha do Nome é fixa.<br>
         <b>Em cada bloco:</b> "Negrito" e "Caixa alta" mudam como o texto sai; a lixeirinha apaga só aquele campo. Tudo é reversível com Ctrl+Z.</p>
-      <div class="matriz" id="matriz"></div>
-      <p class="ajuda hide" style="margin:10px 0 0"><b>Barra do rodapé:</b> cria linhas no fim da lista, acima dela.<br>
+      <p class="ajuda hide" id="ajudaRodape"><b>Barra do rodapé:</b> cria linhas no fim da lista, acima dela.<br>
         <b>＋ linha:</b> acrescenta uma linha vazia, que vira espaço na assinatura quando fica entre campos preenchidos.<br>
         <b>✎ campo livre:</b> acrescenta uma linha já com um campo de título e conteúdo livres, para informações que não estão nos campos fixos (ramal, sítio, redes, horário especial).<br>
         <b>Na linha vazia:</b> ⧉ cria outra logo abaixo, ✎ transforma a linha num campo livre e 🗑 elimina a linha. Linhas que só tenham campos livres também podem ser eliminadas pela lixeira.</p>
+      <div class="matriz" id="matriz"></div>
     </div>
 
     <div class="card">
@@ -134,15 +134,15 @@
       <div id="blocoCodigo" class="hide">
         <h2 style="margin-top:22px">Código HTML</h2>
                 <textarea id="saida" readonly></textarea>
-<p class="ajuda hide" style="margin-top:12px"><b>Recomeçar:</b> volta tudo ao estado inicial, apagando dados e disposição.<br>
-          <b>Copiar código:</b> copia o HTML e mantém tudo preenchido, caso precise gerar outra versão.<br>
-          <b>Copiar e apagar:</b> copia e, só se a cópia der certo, limpa os campos preenchidos, preservando a disposição e a aparência que você montou. Use ao terminar, para não deixar dados pessoais na tela.<br>
+<p class="ajuda hide" style="margin-top:12px"><b>Recomeçar:</b> apaga apenas o conteúdo dos campos. Títulos de campos livres, marcações, disposição e barra continuam como você deixou.<br>
+          <b>Apenas copiar:</b> copia o HTML e mantém tudo preenchido, caso precise gerar outra versão.<br>
+          <b>Copiar e recomeçar:</b> copia e, só se a cópia der certo, apaga o conteúdo dos campos, mantendo tudo o mais. Use ao terminar, para não deixar dados pessoais na tela. Para zerar também títulos e disposição, use Restaurar padrões.<br>
           <b>Onde colar:</b> no webmail da Uerj, abra as preferências de assinatura, ative a edição em HTML ou código-fonte e cole o conteúdo copiado.</p>
 
         <div class="row botoesFinais">
-          <button type="button" class="sec" id="btnRecomecar" title="Volta ao estado inicial: apaga dados e disposição">Recomeçar</button>
-          <button type="button" class="sec" id="btnCopiarSeguir" title="Copia o HTML e mantém os dados preenchidos">Copiar código</button>
-          <button type="button" id="btnCopiarLimpar" title="Copia o HTML e, se a cópia der certo, apaga os dados preenchidos">Copiar e apagar</button>
+          <button type="button" class="sec" id="btnRecomecar" title="Apaga o conteúdo dos campos; títulos, marcações e disposição continuam">Recomeçar</button>
+          <button type="button" class="sec" id="btnCopiarSeguir" title="Copia o HTML e mantém tudo preenchido">Apenas copiar</button>
+          <button type="button" id="btnCopiarLimpar" title="Copia o HTML e, se a cópia der certo, apaga o conteúdo dos campos">Copiar e recomeçar</button>
         </div>
         <div class="row"><span class="ok" id="aviso" role="status" aria-live="polite"></span></div>
       </div>
@@ -164,6 +164,6 @@
   </div>
 </div>
 
-<script src="assinatura.js?v=beta3"></script>
+<script src="assinatura.js?v=beta13"></script>
 </body>
 </html>
