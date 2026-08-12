@@ -1,0 +1,118 @@
+/* Assinatura de e-mail Uerj | estilo.css | versão beta 3 */
+:root{ --azul:#0072CE; --ouro:#AD841F; }
+  *{box-sizing:border-box}
+  body{font-family:"Trebuchet MS",Helvetica,sans-serif;margin:0;background:#f4f5f7;color:#1a1a1a}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  header{text-align:center;margin:0 0 20px}
+  h1{font-size:22px;margin:0 0 4px}
+  p.sub{margin:0;color:#555;font-size:14px}
+  .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid #e1e4e8;border-radius:8px;padding:20px}
+  h2{font-size:15px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.5px;color:#444}
+
+  .matriz{display:flex;flex-direction:column;gap:4px}
+  .entre{height:6px;border-radius:4px;transition:height .12s}
+  body.arrastando .entre{height:20px;border:1px dashed #b9d9f6;background:#f2f8ff}
+  body.arrastando .entre.alvo{border-color:var(--azul);background:#dcefff}
+  .linha{position:relative;display:flex;gap:8px;min-height:84px;border:1px dashed #d7dbe0;border-radius:6px;padding:6px 30px 6px 6px;background:#fbfcfd}
+  .linha.semnada{min-height:28px;padding:2px 6px;background:#f7f9fb}
+  /* linhas com campos: setas discretas na borda direita */
+  .ctrl{position:absolute;top:3px;right:3px;bottom:3px;width:24px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+  .mini{all:unset;display:flex;align-items:center;justify-content:center;height:16px;font-size:9px;color:#6b7280;border-radius:3px;cursor:pointer}
+  .mini:hover{background:#e9eef3;color:#3d4650}
+  .linha:not(.removivel) .mini[data-acao="remover"]{display:none}
+  .linha:not(.semnada) .mini[data-acao="remover"]{color:#c0392b}
+  .linha:not(.semnada) .mini[data-acao="remover"]:hover{background:#fdecec;color:#8c1d13}
+  /* o + só aparece em linha vazia ou em linha que já tem campo livre, e havendo espaço */
+  .linha:not(.semnada) .mini.soVazia{display:none}
+  .linha.semnada .mini[data-acao="novo"]{color:#1a7f37}
+  .linha.semnada .mini[data-acao="novo"]:hover{background:#e6f4ea;color:#14622b}
+  .rodapeMatriz{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:2px;padding:6px;border:1px dashed #cfd6dd;border-radius:6px;background:#fbfcfd}
+  .rodapeMatriz .mini{height:26px;padding:0 12px;font-size:12px;font-weight:700;color:#3d4650;border:1px solid #dfe3e8;background:#fff}
+  .rodapeMatriz .mini:hover{background:#eef7ff;border-color:var(--azul);color:var(--azul)}
+  /* linha vazia: sobe à esquerda, lixeira no centro, desce à direita */
+  .linha.semnada .ctrl{position:static;flex:1;flex-direction:row;align-items:center;justify-content:space-between;width:auto}
+  .linha.semnada .mini{height:22px;min-width:34px;font-size:11px}
+  .linha.semnada .mini[data-acao="remover"]{font-size:13px;color:#6b7280}
+  .linha.semnada .mini[data-acao="remover"]:hover{background:#fdecec;color:#c0392b}
+  /* a linha do Nome não se move nem sai */
+  .linha:first-child .ctrl{display:none}
+  .linha:first-child{padding-right:6px}
+  .linha.alvo{border-color:var(--azul);background:#eef7ff}
+  .linha.cheia{border-style:solid;border-color:#e6d3a8}
+  .tile{container-type:inline-size;flex:1 1 0;min-width:0;background:#fff;border:1px solid #c9ced6;border-radius:6px;padding:7px 8px}
+  .tile.fixo{border-color:var(--azul)}
+  .tile.arrastando{opacity:.35;pointer-events:none}
+  .tile .cab{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;font-weight:700;margin-bottom:5px}
+  .tile input.tituloLivre{margin-bottom:5px;font-weight:700}
+  .tile input[type=text]{width:100%;padding:7px 8px;border:1px solid #c9ced6;border-radius:5px;font-size:13px;font-family:inherit}
+  .tile input[type=text]:focus{outline:2px solid var(--azul);outline-offset:-1px}
+  .alca{display:inline-block;margin-left:4px;padding:0 4px;color:#6b7280;cursor:grab;touch-action:none;border-radius:4px;font-size:13px;letter-spacing:-1px}
+  .alca:focus{outline:2px solid var(--azul);color:var(--azul)}
+  .alca:active{cursor:grabbing}
+  .opcs{display:inline-flex;gap:10px;align-items:center}
+  .tile .limpar{display:none;height:18px;min-width:20px;font-size:12px;color:#c0392b}
+  .tile .limpar:hover{background:#fdecec;color:#8c1d13}
+  .marc{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#555;white-space:nowrap;cursor:pointer}
+  .marc input{width:14px;height:14px;margin:0;cursor:pointer}
+  .marc .curto{display:none}
+  @container (max-width: 250px){ .marc .longo{display:none} .marc .curto{display:inline} }
+
+  textarea{width:100%;height:250px;font-family:Consolas,Menlo,monospace;font-size:12px;border:1px solid #c9ced6;border-radius:5px;padding:10px;white-space:pre-wrap;word-break:break-all;overflow:auto}
+  button{background:var(--azul);color:#fff;border:0;border-radius:5px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  button:hover:not(:disabled){filter:brightness(.92)}
+  button:disabled{background:#b9bfc8;cursor:not-allowed}
+  button.sec{background:#fff;color:#3d4650;border:1px solid #c9ced6;font-weight:400}
+  button.sec:disabled{background:#f1f3f5;color:#a9afb7;border-color:#e1e4e8}
+  .row{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .ok{color:#1a7f37;font-size:13px;font-weight:700}
+  .aviso{color:#8a6d00;font-size:13px}
+  .barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  #cor{width:44px;height:34px;padding:2px;border:1px solid #c9ced6;border-radius:50%;background:#fff;cursor:pointer}
+  #cor::-webkit-color-swatch-wrapper{padding:0}
+  #cor::-webkit-color-swatch{border:none;border-radius:50%}
+  #cor::-moz-color-swatch{border:none;border-radius:50%}
+  .amostras{display:inline-flex;gap:6px}
+  .opcaoLogo{gap:6px;border:1px solid #e1e4e8;border-radius:6px;padding:5px 9px}
+  .opcaoLogo img{max-width:120px;object-fit:contain}
+  .opcaoLogo:has(input:checked){border-color:var(--azul);background:#f2f8ff}
+  .amostra{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;padding:0}
+  .amostra.ativa{box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--azul)}
+  .dica{color:#777;font-size:12px;margin:10px 0 0}
+  .ajuda{color:#4a5560;background:#f2f8ff;border-left:3px solid var(--azul);font-size:12px;margin:0 0 10px;padding:7px 10px;border-radius:0 5px 5px 0}
+  .ajuda.hide{display:none}
+  .lamp{all:unset;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px;filter:grayscale(1);opacity:.55}
+  .lamp:hover{background:#eef2f6}
+  .lamp.ativo{filter:none;opacity:1;background:#fff6d8}
+  .selo{background:#e6f4ea;color:#1a7f37;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700}
+  .opcaoLogo.fora{opacity:.75;border-color:#e6c9a8;background:#fffaf2}
+  .foraAviso{background:#fdf0d5;color:#8a6d00;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:6px}
+  .tituloLinha{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .tituloLinha .aviso{text-transform:none;letter-spacing:0;font-weight:400}
+  .barraBotoes{align-items:center}
+  .sep{width:1px;align-self:stretch;background:#dfe3e8;margin:2px 4px}
+  button.icone{font-size:17px;line-height:1;padding:8px 12px}
+  .credito{margin:22px 0 0;text-align:center;font-size:12px;color:#5f6771}
+  .credito a{color:#5f6771}
+  .preview{background:#fff;border:1px dashed #c9ced6;border-radius:8px;padding:16px;overflow:auto}
+  .hide{display:none}
+  .modal.hide{display:none}
+  .modal{position:fixed;inset:0;background:rgba(20,24,28,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
+  .modal .caixa{background:#fff;border-radius:10px;padding:22px;max-width:560px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .modal .opc{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:400;margin:0 0 8px;cursor:pointer}
+  .modal .opc input{width:16px;height:16px;margin:0;cursor:pointer}
+  #mCancelar{font-weight:700;border-color:#8b929b}
+  #mCancelar:focus{outline:2px solid var(--azul);outline-offset:2px}
+
+/* telas estreitas: blocos da mesma linha empilham, mas continuam visivelmente agrupados */
+@media(max-width:640px){
+  .linha{flex-wrap:wrap}
+  .linha .tile{flex:1 1 100%}
+  .linha:not(.semnada){border-style:solid;border-color:#d7dbe0;background:#f4f7fa}
+}
+
+/* botões finais em uma linha só */
+.botoesFinais{gap:10px;flex-wrap:nowrap}
+.botoesFinais button{white-space:nowrap;padding:10px 14px}
+@media(max-width:520px){ .botoesFinais{flex-wrap:wrap} }

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!-- Assinatura de e-mail Uerj | versão beta 3 -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Gerador de assinatura de e-mail da Uerj | Monte e copie o código HTML</title>
+<meta name="description" content="Ferramenta gratuita para servidores e docentes da Uerj criarem a assinatura de e-mail no padrão institucional: nome, cargo, função, matrícula, lotação, telefones, sala e atendimento. Gera o código HTML pronto para colar no webmail da Uerj.">
+<meta name="keywords" content="assinatura de e-mail, Uerj, webmail Uerj, assinatura institucional, gerador de assinatura, HTML, SOGo, identidade visual Uerj">
+<meta name="author" content="Toni Henriques">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0072CE">
+<link rel="canonical" href="https://inot.com.br/gerador-assinatura-webmail-uerj/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230072CE'/%3E%3Crect x='14' y='16' width='36' height='32' rx='3' fill='%23fff'/%3E%3Cpath d='M14 20l18 14 18-14' fill='none' stroke='%230072CE' stroke-width='4'/%3E%3Crect x='44' y='14' width='6' height='36' fill='%23AD841F'/%3E%3C/svg%3E">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Gerador de assinatura de e-mail da Uerj">
+<meta property="og:title" content="Gerador de assinatura de e-mail da Uerj">
+<meta property="og:description" content="Monte a assinatura no padrão da Uerj, veja o resultado enquanto digita e copie o código HTML pronto para o webmail.">
+<meta property="og:url" content="https://inot.com.br/gerador-assinatura-webmail-uerj/">
+<meta property="og:image" content="https://www.uerj.br/wp-content/uploads/2021/04/Uerj_email_h98.png">
+<meta property="og:image:alt" content="Selo da Universidade do Estado do Rio de Janeiro">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gerador de assinatura de e-mail da Uerj">
+<meta name="twitter:description" content="Monte a assinatura no padrão da Uerj e copie o código HTML pronto para o webmail.">
+<meta name="twitter:image" content="https://www.uerj.br/wp-content/uploads/2021/04/Uerj_email_h98.png">
+
+<link rel="preconnect" href="https://www.uerj.br">
+<link rel="stylesheet" href="estilo.css?v=beta3">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Gerador de assinatura de e-mail da Uerj",
+  "url": "https://inot.com.br/gerador-assinatura-webmail-uerj/",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Navegador web",
+  "inLanguage": "pt-BR",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+  "author": {
+    "@type": "Person",
+    "name": "Toni Henriques",
+    "email": "oliveira.toni@uerj.br",
+    "affiliation": { "@type": "CollegeOrUniversity", "name": "Universidade do Estado do Rio de Janeiro" }
+  },
+  "description": "Monta a assinatura de e-mail no padrão institucional da Uerj e gera o código HTML pronto para colar no webmail.",
+  "featureList": [
+    "Visualização em tempo real",
+    "Organização dos campos por arraste",
+    "Escolha de logotipo institucional",
+    "Cor e espessura da barra vertical",
+    "Geração e cópia do código HTML"
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Assinatura de e-mail Uerj</h1>
+    <p class="sub">Monte sua assinatura, gere o código e cole no webmail da Uerj.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2 class="tituloLinha">Campos e disposição <button type="button" class="lamp" title="Mostrar dicas">💡</button> <span class="aviso" id="pendencia" role="status" aria-live="polite"></span></h2>
+      <p class="ajuda hide"><b>Cada bloco é um campo da assinatura.</b><br>
+        <b>Preenchimento:</b> digite só o que quiser mostrar; campo vazio não aparece no resultado.<br>
+        <b>Ordem e agrupamento:</b> arraste pela alça ⠿ (ou dê foco nela com Tab e use as setas). Blocos na mesma linha saem lado a lado, separados por barra, até três por linha; em linhas diferentes, saem um embaixo do outro.<br>
+        <b>Espaços:</b> uma linha vazia entre campos vira um respiro na assinatura; duas ou três seguidas aumentam o espaço. Linhas vazias no fim são ignoradas.<br>
+        <b>Linhas:</b> ▲ e ▼ movem a linha inteira; 🗑 elimina a linha, disponível nas vazias e nas que só tenham campos livres. A linha do Nome é fixa.<br>
+        <b>Em cada bloco:</b> "Negrito" e "Caixa alta" mudam como o texto sai; a lixeirinha apaga só aquele campo. Tudo é reversível com Ctrl+Z.</p>
+      <div class="matriz" id="matriz"></div>
+      <p class="ajuda hide" style="margin:10px 0 0"><b>Barra do rodapé:</b> cria linhas no fim da lista, acima dela.<br>
+        <b>＋ linha:</b> acrescenta uma linha vazia, que vira espaço na assinatura quando fica entre campos preenchidos.<br>
+        <b>✎ campo livre:</b> acrescenta uma linha já com um campo de título e conteúdo livres, para informações que não estão nos campos fixos (ramal, sítio, redes, horário especial).<br>
+        <b>Na linha vazia:</b> ⧉ cria outra logo abaixo, ✎ transforma a linha num campo livre e 🗑 elimina a linha. Linhas que só tenham campos livres também podem ser eliminadas pela lixeira.</p>
+    </div>
+
+    <div class="card">
+      <h2 class="tituloLinha">Visualização <button type="button" class="lamp" title="Mostrar dicas">💡</button></h2>
+      <p class="dica" id="notaExemplo" style="margin:0 0 8px">O exemplo passa a mostrar seus dados assim que você digitar o primeiro campo.</p>
+      <div class="preview" id="preview"></div>
+
+      <h2 style="margin-top:20px">Logotipo</h2>
+      <p class="ajuda hide"><b>Selo Uerj:</b> a opção mais segura, em pasta permanente do portal; fica sempre disponível.<br>
+        <b>Demais logotipos:</b> dependem de arquivos que a Uerj pode mover ou remover. A página testa cada endereço ao abrir e só oferece os que responderem.<br>
+        <b>Depois de pronta:</b> a assinatura busca a imagem no servidor da Uerj a cada leitura do e-mail; se o arquivo sair do ar, o espaço fica em branco e basta gerar de novo.</p>
+      <div class="barra" id="logos"></div>
+
+      <h2 style="margin-top:20px">Títulos</h2>
+      <p class="ajuda hide"><b>Forma longa e curta:</b> sozinho na linha, o campo mostra o título por extenso (Telefone:, Celular:, Matrícula:); acompanhado de outros, usa a forma curta (Tel:, Cel:, mat.).<br>
+        <b>Mostrar títulos:</b> desmarcado, nenhum título aparece; ficam só os conteúdos separados por barra.<br>
+        <b>Títulos em negrito:</b> controla apenas os títulos. O negrito do conteúdo continua em cada bloco.<br>
+        <b>Campo livre:</b> usa o título que você escrever, e só entra na assinatura se esse título estiver preenchido.</p>
+      <div class="barra">
+        <label class="marc" style="font-size:12px"><input type="checkbox" id="titMostrar" autocomplete="off" checked> Mostrar títulos (Cargo:, Tel:, Mat. …)</label>
+        <label class="marc" style="font-size:12px"><input type="checkbox" id="titNegrito" autocomplete="off" checked> Títulos em negrito</label>
+      </div>
+
+      <h2 style="margin-top:20px">Barra vertical</h2>
+      <p class="ajuda hide"><b>Cores prontas:</b> os círculos são atalhos para ouro e azul Uerj, vermelho, verde, cinza e preto. O círculo marcado é o que está em uso.<br>
+        <b>Rodela de cor:</b> clique nela para abrir o seletor do sistema, com quatro formas de escolher: o <b>conta-gotas</b> captura a cor de qualquer ponto da tela (útil para copiar a cor de um logotipo ou documento); a <b>área quadrada</b> ajusta claridade na vertical e saturação na horizontal; a <b>faixa colorida</b> escolhe o matiz; e os campos <b>R</b>, <b>G</b> e <b>B</b> aceitam os valores exatos de vermelho, verde e azul, de 0 a 255 (o ouro Uerj é 173, 132, 31). A setinha ao lado dos campos alterna para HEX ou HSL, se preferir informar o código da cor.<br>
+        <b>Espessura:</b> de 0 a 10 pixels. Em 0, a barra e o espaçamento extra saem do código; o texto mantém um pequeno afastamento do logotipo.<br>
+        <b>Padrão:</b> ouro Uerj com 3 pixels, restaurável pelo botão Restaurar padrões.</p>
+      <div class="barra">
+        <input type="color" id="cor" value="#AD841F" autocomplete="off" aria-label="Cor da barra">
+        <span class="amostras" id="amostras"></span>
+        <label class="marc" style="font-size:12px">Espessura
+          <input type="range" id="espessura" min="0" max="10" value="3" autocomplete="off" style="width:110px">
+          <span id="espessuraVal">3px</span>
+        </label>
+      </div>
+
+      <p class="ajuda hide" style="margin-top:14px"><b>Restaurar padrões:</b> só acende quando algo saiu do padrão. Abre uma caixa para escolher o que voltar: disposição dos campos, aparência (logotipo, barra e títulos) ou apagar o que foi digitado.<br>
+        <b>↶ Desfazer e ↷ Refazer:</b> valem para tudo, texto, marcações, cores e arrasto. Também por Ctrl+Z e Ctrl+Shift+Z. A digitação é agrupada, então cada passo desfaz uma palavra ou trecho, não letra por letra.<br>
+        <b>Gerar código:</b> libera quando o Nome está preenchido e não há campo incompleto; mostra o HTML pronto abaixo.</p>
+
+      <div class="row barraBotoes">
+        <button type="button" class="sec" id="btnPadrao" disabled>Restaurar padrões</button>
+        <span class="sep"></span>
+        <button type="button" class="sec icone" id="btnDesfazer" title="Desfazer (Ctrl+Z)" disabled>↶</button>
+        <button type="button" class="sec icone" id="btnRefazer" title="Refazer (Ctrl+Shift+Z)" disabled>↷</button>
+        <span class="sep"></span>
+        <button type="button" id="btnGerar" disabled>Gerar código</button>
+      </div>
+
+
+      <div id="blocoCodigo" class="hide">
+        <h2 style="margin-top:22px">Código HTML</h2>
+                <textarea id="saida" readonly></textarea>
+<p class="ajuda hide" style="margin-top:12px"><b>Recomeçar:</b> volta tudo ao estado inicial, apagando dados e disposição.<br>
+          <b>Copiar código:</b> copia o HTML e mantém tudo preenchido, caso precise gerar outra versão.<br>
+          <b>Copiar e apagar:</b> copia e, só se a cópia der certo, limpa os campos preenchidos, preservando a disposição e a aparência que você montou. Use ao terminar, para não deixar dados pessoais na tela.<br>
+          <b>Onde colar:</b> no webmail da Uerj, abra as preferências de assinatura, ative a edição em HTML ou código-fonte e cole o conteúdo copiado.</p>
+
+        <div class="row botoesFinais">
+          <button type="button" class="sec" id="btnRecomecar" title="Volta ao estado inicial: apaga dados e disposição">Recomeçar</button>
+          <button type="button" class="sec" id="btnCopiarSeguir" title="Copia o HTML e mantém os dados preenchidos">Copiar código</button>
+          <button type="button" id="btnCopiarLimpar" title="Copia o HTML e, se a cópia der certo, apaga os dados preenchidos">Copiar e apagar</button>
+        </div>
+        <div class="row"><span class="ok" id="aviso" role="status" aria-live="polite"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="credito">Desenvolvido por Toni Henriques | <a href="mailto:oliveira.toni@uerj.br">oliveira.toni@uerj.br</a></p>
+</div>
+
+<div class="modal hide" id="modal">
+  <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="mTitulo" aria-describedby="mDesc">
+    <p id="mTitulo" style="margin:0 0 4px;font-weight:700">Restaurar padrões</p>
+    <p id="mDesc" style="margin:0 0 14px;font-size:13px;color:#555">Escolha o que restaurar:</p>
+    <div id="mOpcoes"></div>
+    <div class="row" style="margin-top:18px">
+      <button type="button" id="mRestaurar" disabled>Restaurar Selecionados</button>
+      <button type="button" class="sec" id="mCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="assinatura.js?v=beta3"></script>
+</body>
+</html>

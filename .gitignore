@@ -1,0 +1,15 @@
+# Windows
+Thumbs.db
+desktop.ini
+
+# editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# cópias de trabalho
+*.bak
+*.tmp
+*.zip
+index (*).html
