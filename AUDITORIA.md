@@ -1,6 +1,6 @@
 # Auditoria: ponto de partida
 
-Documento preparado para quem for auditar o projeto, humano ou automático. Descreve o que existe, o que já foi corrigido, onde estão as partes frágeis e o que precisa ser testado. Versão auditada: **beta 14**.
+Documento preparado para quem for auditar o projeto, humano ou automático. Descreve o que existe, o que já foi corrigido, onde estão as partes frágeis e o que precisa ser testado. Versão auditada: **1**.
 
 ## 1. Escopo
 
@@ -44,7 +44,7 @@ Cada item abaixo já quebrou uma vez. Vale testar de novo a cada mudança.
 8. `button.sec` vencia `button:disabled`, deixando botão desabilitado branco.
 9. Cópia dizia "copiado" mesmo quando `execCommand` devolvia falso, e apagava os dados em seguida.
 
-### Corrigidos na beta 14
+### Corrigidos na versão 1
 
 10. **Ctrl+Z durante a digitação apagava o trecho sem volta.** `registrar()` agrupa a digitação com 350 ms de atraso, e `desfazer()`/`refazer()` não fechavam esse agrupamento: o texto recém-escrito nunca entrava na pilha. Hoje as duas chamam `firmar()` antes de andar no histórico.
 11. **Desfazer devolvia o campo livre do padrão em branco.** `aplicarEstado()` recriava campos livres por `/^livre\d+$/`, que não casa com o id `livre`; o bloco voltava depois, pela `garantirCampos()`, já sem valores. Hoje `garantirCampos()` roda antes de repor os valores e recebe do estado quais ids eram campos livres.
@@ -54,7 +54,7 @@ Cada item abaixo já quebrou uma vez. Vale testar de novo a cada mudança.
 15. **A linha que se esvaziava por arraste sumia sozinha.** Passou a permanecer, vazia; quem elimina é a lixeira. Junto, `abrirLinhaEm()` deixou de reaproveitar a última linha vazia, que podia estar em uso como espaço proposital.
 16. **Setas sem destino continuavam clicáveis.** Agora quem não tem para onde ir recebe a classe `inerte` e o atributo `disabled`.
 
-### Mudanças de comportamento na beta 14
+### Mudanças de comportamento na versão 1
 
 - O Nome deixou de ser preso por código (`garantirNome()` não existe mais). A linha dele sai travada, e é o cadeado que o mantém no alto. Destravada, a linha se move e o bloco arrasta como qualquer outro.
 - Quem audita precisa saber: **a primeira linha não é mais especial**. Qualquer teste que pressuponha "Nome na posição 0" deve, em vez disso, verificar o cadeado.

@@ -4,7 +4,7 @@ Ferramenta web que monta a assinatura de e-mail no padrão da Universidade do Es
 
 Em produção: <https://inot.com.br/gerador-assinatura-webmail-uerj/>
 
-Versão atual: **beta 14**.
+Versão atual: **1**.
 
 ## Arquivos
 
@@ -15,7 +15,7 @@ Versão atual: **beta 14**.
 | `assinatura.js` | montagem dos campos, arraste, histórico e geração do HTML |
 | `testes/` | bateria automatizada; não vai para o ar |
 
-Não há dependências, build nem servidor: basta abrir o `index.html` ou publicar os três arquivos numa pasta. Ao alterar CSS ou JavaScript, troque o número de versão nos links do `index.html` (`?v=beta14`), senão o navegador continua usando o arquivo em cache.
+Não há dependências, build nem servidor: basta abrir o `index.html` ou publicar os três arquivos numa pasta. Ao alterar CSS ou JavaScript, troque o número de versão nos links do `index.html` (`?v=1`), senão o navegador continua usando o arquivo em cache.
 
 ## Testes
 

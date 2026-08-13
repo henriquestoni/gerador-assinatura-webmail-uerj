@@ -1,4 +1,4 @@
-/* Assinatura de e-mail Uerj | testes/comum.js | versão beta 14 */
+/* Assinatura de e-mail Uerj | testes/comum.js | versão 1 */
 /* Carrega a página em jsdom e devolve um contexto de teste isolado.
    Cada chamada de `abrir()` monta uma página nova, sem estado da anterior. */
 

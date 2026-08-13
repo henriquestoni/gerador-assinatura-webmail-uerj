@@ -1,4 +1,4 @@
-/* Assinatura de e-mail Uerj | testes/casos.js | versão beta 14 */
+/* Assinatura de e-mail Uerj | testes/casos.js | versão 1 */
 /* Cada seção corresponde a um bloco de "Verificações sugeridas" da AUDITORIA.md.
    Um caso é uma função assíncrona que recebe `ok` e verifica uma coisa só. */
 

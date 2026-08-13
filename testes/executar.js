@@ -1,4 +1,4 @@
-/* Assinatura de e-mail Uerj | testes/executar.js | versão beta 14 */
+/* Assinatura de e-mail Uerj | testes/executar.js | versão 1 */
 /* Roda todos os casos e devolve código de saída 1 se algum falhar.
    Uso:  node testes/executar.js            (tudo)
          node testes/executar.js Matriz     (só uma seção) */

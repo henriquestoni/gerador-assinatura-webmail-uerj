@@ -1,5 +1,5 @@
-/* Assinatura de e-mail Uerj | assinatura.js | versão beta 14 */
-const VERSAO = "beta 14";
+/* Assinatura de e-mail Uerj | assinatura.js | versão 1 */
+const VERSAO = "1";
 const LINHAS = 14, COLS = 3;   /* o rodapé já cria linhas quando preciso */
 
 /* prefixo de todos os id gerados: isola os campos de qualquer id do HTML */
