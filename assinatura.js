@@ -6,22 +6,28 @@ const LINHAS = 14, COLS = 3;   /* o rodapé já cria linhas quando preciso */
 const PRE = "asg_";
 
 /* `numero`: campo só de algarismos, que não ganha o sinal de caixa alta.
+   `tel`: aceita telefone e pode virar link de WhatsApp. `dentroDe`: mora dentro de outro campo.
 
    Títulos. Cada forma é escrita em minúsculas, com a palavra que pode ir a negrito
    entre chaves; a maiúscula entra por regra, quando o campo abre a linha ou vem
    depois de uma barra. `corrido` marca quem se cola ao vizinho por vírgula em vez
    de barra, e `semAutomacao`, quem a automação não silencia.
      titulo  → forma completa            {matrícula}:
-     abrev   → forma abreviada           {mat}.
+     abrev   → forma abreviada           {mat.}
      verPadrao / abrevPadrao → estado inicial dos botões do campo */
 let defs = [
-  {id:"nome",        rotulo:"Nome",          dica:"Maria da Silva", obrigatorio:true, negrito:true},
+  /* a titulação vive dentro do bloco do Nome e anda colada a ele: não é um bloco
+     da matriz, não tem título, e a caixa alta do Nome e a dos títulos não a alcançam */
+  {id:"titulacao",   rotulo:"Titulação",     dica:"Prof. Dr.", dentroDe:"nome", negrito:true},
+  {id:"nome",        rotulo:"Nome",          dica:"Maria da Silva", obrigatorio:true, negrito:true, temTitulacao:true},
   {id:"cargo",       rotulo:"Cargo",         dica:"Técnico Universitário",
                      titulo:"{cargo}: ", podeOcultar:true, verPadrao:true},
   {id:"funcao",      rotulo:"Função",        dica:"Chefe de Serviço",
                      titulo:"{função}: ", podeOcultar:true, verPadrao:true},
+  /* dentro dos parênteses, depois do Nome, a matrícula troca o ":" por "n." */
   {id:"matricula",   rotulo:"Matrícula",     dica:"00.000-0", mascara:"mat", numero:true,
-                     titulo:"{matrícula}: ", abrev:"{mat}. ", podeAbreviar:true, semAutomacao:true},
+                     titulo:"{matrícula}: ", abrev:"{mat.} ", podeAbreviar:true, semAutomacao:true,
+                     tituloParenteses:"matrícula n. ", abrevParenteses:"mat. n. "},
   {id:"lotacao",     rotulo:"Lotação",       dica:"ECOMUSEU/PR-3", negrito:true, caixaPadrao:true},
   {id:"celular",     rotulo:"Celular",       dica:"(21)91234-5678", tel:true, numero:true, mascaraSempre:true,
                      titulo:"{celular}: ", abrev:"{cel}: ", podeOcultar:true, podeAbreviar:true, verPadrao:true},
@@ -31,12 +37,12 @@ let defs = [
   {id:"email",       rotulo:"E-mail",        dica:"usuario@uerj.br",
                      titulo:"{e-mail}:&nbsp;", podeOcultar:true, verPadrao:true},
   {id:"sala",        rotulo:"Sala",          dica:"3.002, bloco F, 3º andar",
-                     titulo:"{sala}: ", abrev:"{sala} n. ", podeAbreviar:true, corrido:true, semAutomacao:true},
+                     titulo:"{sala}: ", abrev:"{sala} n. ", podeAbreviar:true, corrido:true, semAutomacao:true, pontoFinal:true},
   {id:"atendimento", rotulo:"Atendimento",   dica:"seg. a sex., 9h às 17h",
-                     titulo:"{atendimento}: ", abrev:"{atendimento} de ", podeAbreviar:true, corrido:true, semAutomacao:true},
+                     titulo:"{atendimento}: ", abrev:"{atendimento} de ", podeAbreviar:true, corrido:true, semAutomacao:true, pontoFinal:true},
   /* o campo livre aceita telefone e vira link de WhatsApp, mas não leva máscara:
      ela reescreveria o que se digita num campo cuja razão de ser é aceitar qualquer coisa */
-  {id:"livre",       rotulo:"Campo livre",   titulo:"",              dica:"Conteúdo", dicaTitulo:"Título (necessário)",
+  {id:"livre",       rotulo:"Campo livre",   dica:"Conteúdo", dicaTitulo:"Título (necessário)",
                      livre:true, tel:true}
 ];
 const porId = Object.fromEntries(defs.map(d => [d.id, d]));
@@ -64,6 +70,14 @@ function autoDe(id){ return AUTOCOMPLETE[id] || "off"; }
 let pilha = [], indice = -1, restaurando = false, agendado = null;
 let arrastado = null, linhaOrigem = null;
 
+/* pontuação de fim de conteúdo; mora aqui no topo porque a matriz é montada no meio
+   do arquivo e já chama atualizar(), o que derrubaria uma const declarada lá embaixo */
+const FIM_PONTUADO = /[.!?…:;,]+$/;
+
+/* corpo do texto da assinatura. O "Atenciosamente," sai do mesmo tamanho: menor
+   que o restante ele ficava miúdo demais, e o teto de 12pt não permitiria crescer muito. */
+const TAM_CORPO = 14;
+
 const el = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const B = t => '<span style="font-weight:900">' + t + '</span>';
@@ -71,7 +85,7 @@ const B = t => '<span style="font-weight:900">' + t + '</span>';
 /* acesso aos elementos de cada campo, sempre pelo prefixo */
 const campo   = id      => el(PRE + id);                 /* caixa de conteúdo */
 const tituloEl = id     => el(PRE + "t_" + id);          /* caixa de título do campo livre */
-const marca   = (k, id) => el(PRE + k + "_" + id);       /* b, c, m, w */
+const marca   = (k, id) => el(PRE + k + "_" + id);       /* c, b, i, w, e v e r dos títulos */
 
 /* Sinais desenhados, em traço fechado, herdando a cor do texto do chip.
    Traçado do balão e do fone; a caixa de cada um foi medida no próprio desenho.
@@ -85,17 +99,85 @@ function sinalSVG(caixa, tracos){
 }
 const SINAL_ZAP = sinalSVG("318 35.3 645.7 657.5", '<path d="' + TRACO_BALAO + '"/><path d="' + TRACO_FONE + '"/>');
 
-/* um chip de marcação: só o sinal, sem rótulo; o nome fica no title e no leitor de tela */
-function sinalMarc(chave, id, ligado, titulo, sinal, extra){
-  return '<label class="marc' + (extra ? " " + extra : "") + '" title="' + esc(titulo) + '">' +
+/* Um chip de marcação: só o sinal, sem rótulo. O leitor de tela recebe o nome fixo
+   da marcação, e o `title` diz a ação que o clique faz agora — aplicar ou remover —,
+   guardada nos dois atributos para `sincronizarEscolhas` alternar. */
+function sinalMarc(chave, id, ligado, acoes, sinal, extra){
+  return '<label class="marc' + (extra ? " " + extra : "") + '"' +
+    ' data-lig="' + esc(acoes.lig) + '" data-desl="' + esc(acoes.desl) + '"' +
+    ' title="' + esc(ligado ? acoes.desl : acoes.lig) + '">' +
     '<input type="checkbox" autocomplete="off" id="' + PRE + chave + "_" + id + '"' + (ligado ? " checked" : "") +
-    ' aria-label="' + esc(titulo) + '">' + sinal + '</label>';
+    ' aria-label="' + esc(acoes.nome) + '">' + sinal + '</label>';
+}
+/* os textos de cada marcação, num lugar só */
+const ACOES = {
+  c: { nome:"Caixa alta", lig:"Aplicar caixa alta", desl:"Remover a caixa alta" },
+  b: { nome:"Negrito",    lig:"Aplicar negrito",    desl:"Remover o negrito" },
+  i: { nome:"Itálico",    lig:"Aplicar itálico",    desl:"Remover o itálico" },
+  w: { nome:"WhatsApp",   lig:"Gerar link do WhatsApp", desl:"Remover o link do WhatsApp" },
+  v: { nome:"Título",     lig:"Mostrar o título deste campo", desl:"Ocultar o título deste campo" },
+  r: { nome:"Forma do título", lig:"Usar a forma abreviada do título", desl:"Usar a forma completa do título" }
+};
+
+/* A titulação: fechada, é só um botão colado ao Nome; aberta, é um campo com
+   caixa alta, negrito e itálico próprios. Fechar apaga o que estiver escrito. */
+function blocoTitulacao(){
+  const t = porId.titulacao;
+  return '<div class="titulacao fechada">' +
+    /* o rótulo na horizontal, quebrando em linhas: vertical não se lia */
+    '<button type="button" class="mini abrirTit" title="Acrescentar uma titulação antes do nome">' +
+      '<span class="mais">＋</span><span class="rotuloTit">Adicionar titulação</span></button>' +
+    '<div class="dentroTit">' +
+      /* mesmo desenho dos outros blocos: rótulo à esquerda, setinha e fecho à direita,
+         e as marcações recolhidas acima do campo, encostadas à direita */
+      '<div class="cabTit"><span>Titulação</span>' +
+        '<button type="button" class="mini fecharTit" title="Remover a titulação e apagar o que foi escrito">✕</button>' +
+      '</div>' +
+      '<div class="opcsTit"><span class="grupo forma">' +
+        sinalMarc("c", t.id, t.caixaPadrao, ACOES.c, '<span class="sinal caixa">Aa</span>') +
+        sinalMarc("b", t.id, t.negrito, ACOES.b, '<span class="sinal grosso">N</span>') +
+        sinalMarc("i", t.id, t.italico, ACOES.i, '<span class="sinal inclinado">I</span>') +
+      '</span></div>' +
+      '<input type="text" id="' + PRE + t.id + '" name="' + PRE + t.id + '" autocomplete="off"' +
+        ' aria-label="Titulação" placeholder="' + t.dica + '">' +
+    '</div></div>';
+}
+function titulacaoAberta(){
+  const cx = document.querySelector(".titulacao");
+  return !!cx && !cx.classList.contains("fechada");
+}
+/* Um lugar só para dizer se a titulação está aberta: são duas classes, a dela e a do
+   bloco, que reserva a largura no rateio da linha. Separá-las já produziu desfazer torto. */
+function marcarTitulacao(aberta){
+  const cx = document.querySelector(".titulacao");
+  if(!cx) return;
+  cx.classList.toggle("fechada", !aberta);
+  const bloco = cx.closest(".tile");
+  if(bloco) bloco.classList.toggle("titAberta", aberta);
+}
+/* fecha e limpa sem passar pelo histórico: para quem já registra o próprio passo */
+function fecharTitulacao(){
+  marcarTitulacao(false);
+  const t = porId.titulacao || {};
+  if(campo("titulacao")) campo("titulacao").value = "";
+  /* as marcações voltam ao padrão do campo, não a "tudo desmarcado" */
+  [["c", t.caixaPadrao], ["b", t.negrito], ["i", t.italico]].forEach(([k, padrao]) => {
+    const m = marca(k, "titulacao"); if(m) m.checked = !!padrao;
+  });
+}
+function abrirTitulacao(abrir){
+  if(!document.querySelector(".titulacao")) return;
+  firmar();                       /* fecha a digitação pendente: fechar apaga, e o desfazer tem de achar o que havia */
+  if(abrir) marcarTitulacao(true); else fecharTitulacao();
+  atualizar();
+  registrarAgora();
+  if(abrir && campo("titulacao")) campo("titulacao").focus();
 }
 
 /* molde de campo livre: um lugar só, usado na criação e na recriação */
 const RE_LIVRE = /^livre(\d+)$/;                         /* só para numerar; o que identifica é d.livre */
 function defLivre(id){
-  return { id, rotulo:"Campo livre", titulo:"", dica:"Conteúdo", dicaTitulo:"Título (necessário)",
+  return { id, rotulo:"Campo livre", dica:"Conteúdo", dicaTitulo:"Título (necessário)",
            livre:true, tel:true };
 }
 /* campo livre criado por quem usa, que some ao restaurar o padrão */
@@ -355,7 +437,8 @@ rodapeMatriz.addEventListener("click", ev => {
 });
 matriz.appendChild(rodapeMatriz);
 
-defs.forEach(d => { document.body.appendChild(criarTile(d)); }); /* criados soltos e posicionados a seguir */
+/* criados soltos e posicionados a seguir; quem mora dentro de outro campo não vira bloco */
+defs.forEach(d => { if(!d.dentroDe) document.body.appendChild(criarTile(d)); });
 sincronizarSeparadores();
 aplicar(PADRAO, false, false, undefined, TRAVAS_PADRAO);
 
@@ -394,7 +477,12 @@ function criarTile(d){
   const t = document.createElement("div");
   t.className = "tile" + (d.obrigatorio ? " obrigatorio" : "");
   t.dataset.id = d.id;
+  /* o bloco com titulação vira dois: a titulação, colada por fora à esquerda,
+     e a caixa do campo, que é quem tem borda e fundo */
+  if(d.temTitulacao) t.classList.add("comTitulacao");
   t.innerHTML =
+    (d.temTitulacao ? blocoTitulacao() : '') +
+    (d.temTitulacao ? '<div class="caixaTile">' : '') +
     '<div class="cab"><span class="ini">' + d.rotulo +
       (d.obrigatorio ? ' <span class="obrig">(obrigatório)</span>' : '') +
       ' <span class="alca" tabindex="0" role="button" aria-label="Mover ' + d.rotulo +
@@ -406,23 +494,29 @@ function criarTile(d){
     '</span></div>' +
     /* uma fileira só: título à esquerda, formato à direita */
     '<div class="opcs"><span class="grupo tit">' +
-      (d.podeOcultar ? sinalMarc("v", d.id, d.verPadrao, "Mostrar o título deste campo na assinatura",
-                                 '<span class="sinal titulo">T</span>') : "") +
-      (d.podeAbreviar ? sinalMarc("r", d.id, d.abrevPadrao, "Usar a forma abreviada do título",
-                                 '<span class="sinal titulo">T.</span>') : "") +
+      (d.podeOcultar ? sinalMarc("v", d.id, d.verPadrao, ACOES.v, '<span class="sinal titulo">T</span>') : "") +
+      (d.podeAbreviar ? sinalMarc("r", d.id, d.abrevPadrao, ACOES.r, '<span class="sinal titulo">T.</span>') : "") +
     '</span><span class="grupo forma">' +
       /* Posição fixa, sempre na mesma ordem, encostada à direita: Aa, WhatsApp, máscara,
          negrito e itálico. Assim os sinais que todo campo tem, N e I, ficam sempre no
          mesmo lugar, e os que faltam abrem espaço à esquerda em vez de embaralhar a fila. */
-      (d.numero ? "" : sinalMarc("c", d.id, d.caixaPadrao, "Caixa alta", '<span class="sinal caixa">Aa</span>')) +
-      (d.tel ? sinalMarc("w", d.id, d.zap, "Gerar link do WhatsApp", '<span class="sinal">' + SINAL_ZAP + '</span>', "zap") : "") +
-      sinalMarc("b", d.id, d.negrito, "Negrito", '<span class="sinal grosso">N</span>') +
-      sinalMarc("i", d.id, d.italico, "Itálico", '<span class="sinal inclinado">I</span>') +
+      (d.numero ? "" : sinalMarc("c", d.id, d.caixaPadrao, ACOES.c, '<span class="sinal caixa">Aa</span>')) +
+      (d.tel ? sinalMarc("w", d.id, d.zap, ACOES.w, '<span class="sinal">' + SINAL_ZAP + '</span>', "zap") : "") +
+      sinalMarc("b", d.id, d.negrito, ACOES.b, '<span class="sinal grosso">N</span>') +
+      sinalMarc("i", d.id, d.italico, ACOES.i, '<span class="sinal inclinado">I</span>') +
     '</span></div>' +
     (d.livre ? '<input type="text" class="tituloLivre" id="' + PRE + 't_' + d.id + '" name="' + PRE + 't_' + d.id + '" autocomplete="off" aria-label="Título do campo livre" placeholder="' + d.dicaTitulo + '">' : '') +
-    '<input type="text" id="' + PRE + d.id + '" name="' + PRE + d.id + '" autocomplete="' + autoDe(d.id) + '"' +
+    '<input type="text" class="principal" id="' + PRE + d.id + '" name="' + PRE + d.id + '" autocomplete="' + autoDe(d.id) + '"' +
       (d.obrigatorio ? ' required aria-required="true"' : '') +
-      ' aria-label="' + d.rotulo + (d.obrigatorio ? " (obrigatório)" : "") + '" placeholder="' + d.dica + '">';
+      ' aria-label="' + d.rotulo + (d.obrigatorio ? " (obrigatório)" : "") + '" placeholder="' + d.dica + '">' +
+    (d.temTitulacao ? '</div>' : '');
+
+  if(d.temTitulacao){
+    t.querySelector(".abrirTit").addEventListener("click", () => abrirTitulacao(true));
+    t.querySelector(".fecharTit").addEventListener("click", () => abrirTitulacao(false));
+    t.querySelector(".dentroTit input[type=text]").addEventListener("input", atualizar);
+    t.querySelectorAll(".dentroTit .marc input").forEach(c => c.addEventListener("change", atualizar));
+  }
 
   /* as marcações ficam recolhidas; a setinha as revela quando forem precisas */
   const abrir = t.querySelector(".abrir");
@@ -439,14 +533,14 @@ function criarTile(d){
   });
   const livre = t.querySelector(".tituloLivre");
   if(livre) livre.addEventListener("input", atualizar);
-  t.querySelector("input[type=text]:not(.tituloLivre)").addEventListener("input", e => {
+  t.querySelector("input.principal").addEventListener("input", e => {
     if(d.mascara === "mat") e.target.value = mascaraMatricula(e.target.value);
     if(comMascara(d.id)) e.target.value = mascaraTelefone(e.target.value);
     atualizar();
   });
   t.querySelectorAll(".marc input").forEach(c => c.addEventListener("change", () => {
     if(d.tel){
-      const txt = t.querySelector("input[type=text]");
+      const txt = t.querySelector("input.principal");
       if(comMascara(d.id)) txt.value = mascaraTelefone(txt.value);
       ajustarCampoTel(d);
     }
@@ -549,6 +643,7 @@ function tile(id){ return document.querySelector('.tile[data-id="' + id + '"]');
 /* `comHistorico` não se chama `registrar` de propósito: o nome sombrearia a função de histórico */
 function aplicar(disp, comHistorico = true, limparExtras = false, livres, listaTravas){
   if(comHistorico) registrarHistorico();
+  if(limparExtras) fecharTitulacao();     /* voltar ao padrão é voltar sem titulação */
   linhas().forEach(l => l.classList.remove("travada"));   /* as travas do estado novo entram no fim */
   if(limparExtras) descartarExtras(disp);
   garantirCampos(disp, livres);
@@ -612,10 +707,11 @@ function estadoAtual(){
     };
   });
   return JSON.stringify({
-    campos, layout: disposicao(), travas: travas(),
+    campos, layout: disposicao(), travas: travas(), tit: titulacaoAberta(),
     logo: logoEscolhido,
     cor: el("cor").value, esp: el("espessura").value,
-    tm: el("titAuto").checked, tn: el("titNegrito").checked
+    tm: el("titAuto").checked, tn: el("titNegrito").checked,
+    ti: el("titItalico").checked, tc: el("titCaixa").checked
   });
 }
 
@@ -635,12 +731,15 @@ function aplicarEstado(txt){
       .forEach(([chave, guardada]) => { const c = marca(chave, d.id); if(c) c.checked = !!s[guardada]; });
     if(d.tel) ajustarCampoTel(d);
   });
+  marcarTitulacao(!!e.tit);
   if(e.logo && e.logo !== logoEscolhido){ logoEscolhido = e.logo; montarLogos(); }
   el("cor").value = e.cor;
   el("espessura").value = e.esp;
   el("espessuraVal").textContent = e.esp + "px";
   el("titAuto").checked = e.tm;
   el("titNegrito").checked = e.tn;
+  el("titItalico").checked = !!e.ti;
+  el("titCaixa").checked = !!e.tc;
   sincronizarPaleta();
   /* tira o que não existia naquele momento: sem isso o desfazer deixa campos órfãos */
   const previstos = new Set(e.layout.flat());
@@ -856,6 +955,9 @@ function sincronizarEscolhas(){
     if(!i || i.type === "range") return;
     l.classList.toggle("escolhida", !!i.checked);
     l.classList.toggle("desabilitada", !!i.disabled);
+    /* a dica diz o que o clique faz agora; em botão desabilitado, quem escreve
+       o texto é quem o desabilitou, explicando o motivo */
+    if(!i.disabled && l.dataset.lig) l.title = i.checked ? l.dataset.desl : l.dataset.lig;
   });
   avisarMarcas();
 }
@@ -878,16 +980,18 @@ function ajustarBotoesTitulo(){
       if(!c) return;
       c.disabled = inerte;
       const cx = c.closest(".marc");
-      if(cx) cx.title = inerte
-        ? "A automação está no comando desta linha; desligue-a para escolher o título campo a campo"
-        : (chave === "v" ? "Mostrar o título deste campo na assinatura" : "Usar a forma abreviada do título");
+      if(cx && inerte) cx.title = "A automação está no comando desta linha; desligue-a para escolher o título campo a campo";
     });
+    /* título oculto não tem forma: o botão de abreviar sai de cena */
+    const v = marca("v", d.id), r = marca("r", d.id);
+    if(r && r.closest(".marc")) r.closest(".marc").classList.toggle("oculta", !!v && !v.checked);
   });
 }
 
 /* Com as marcações recolhidas, a setinha precisa dizer que há algo fora do comum
    naquele campo: um ponto, e a lista no title. */
-const NOMES_MARCA = { c:"Caixa alta", b:"Negrito", i:"Itálico", w:"WhatsApp" };
+const NOMES_MARCA = { c:"Caixa alta", b:"Negrito", i:"Itálico", w:"WhatsApp",
+                      v:"título oculto", r:"título abreviado" };
 function avisarMarcas(){
   defs.forEach(d => {
     const t = tile(d.id); if(!t) return;
@@ -898,6 +1002,8 @@ function avisarMarcas(){
     if(ligada("b") !== !!d.negrito) mudou.push(NOMES_MARCA.b);
     if(ligada("i") !== !!d.italico) mudou.push(NOMES_MARCA.i);
     if(marca("w", d.id) && ligada("w") !== !!d.zap) mudou.push(NOMES_MARCA.w);
+    if(marca("v", d.id) && ligada("v") !== !!d.verPadrao) mudou.push(NOMES_MARCA.v);
+    if(marca("r", d.id) && ligada("r") !== !!d.abrevPadrao) mudou.push(NOMES_MARCA.r);
       b.classList.toggle("temMarca", mudou.length > 0);
     const aberto = t.classList.contains("aberto");
     b.title = (aberto ? "Ocultar opções deste campo" : "Mostrar opções deste campo")
@@ -925,6 +1031,7 @@ document.addEventListener("keydown", ev => {
   else if((k === "z" && ev.shiftKey) || k === "y"){ ev.preventDefault(); refazer(); }
 });
 function apagarConteudos(){
+  fecharTitulacao();          /* apagar o conteúdo inclui a titulação, que sem texto trava a geração */
   defs.forEach(d => {
     if(tituloEl(d.id)) tituloEl(d.id).value = "";
     if(campo(d.id)) campo(d.id).value = "";
@@ -946,12 +1053,15 @@ function restaurarBarra(){
   el("espessuraVal").textContent = "3px";
   el("titAuto").checked = true;
   el("titNegrito").checked = true;
+  el("titItalico").checked = false;
+  el("titCaixa").checked = false;
   sincronizarPaleta();
 }
 /* o que fugiu do padrão */
 function camposMudaram(){
+  if(titulacaoAberta()) return true;                         /* a titulação é acréscimo à estrutura */
   if(defs.some(d => livreExtra(d.id))) return true;          /* campo livre criado depois */
-  if(DEFS_BASE.some(d => !tile(d.id))) return true;          /* algum campo do padrão foi apagado */
+  if(DEFS_BASE.some(d => !d.dentroDe && !tile(d.id))) return true;          /* algum campo do padrão foi apagado */
   /* comparação literal, linha a linha: uma linha vazia a mais, mesmo no fim, está fora do padrão.
      Ela aparece na matriz, então precisa ser restaurável. Os cadeados contam junto. */
   return JSON.stringify(disposicao()) !== JSON.stringify(PADRAO)
@@ -959,7 +1069,8 @@ function camposMudaram(){
 }
 function barraMudou(){
   return logoMudou() || el("cor").value.toUpperCase() !== "#AD841F" || el("espessura").value !== "3"
-      || !el("titAuto").checked || !el("titNegrito").checked;
+      || !el("titAuto").checked || !el("titNegrito").checked
+      || el("titItalico").checked || el("titCaixa").checked;
 }
 function podeRestaurar(){
   return { campos: camposMudaram(), barra: barraMudou(), limpar: algoDigitado() };
@@ -1054,7 +1165,11 @@ function algoDigitado(){
 function entra(id){
   const d = porId[id];
   if(!d) return false;
-  return d.livre ? !!(tituloLivre(id) || valor(id)) : !!valor(id);
+  if(d.livre) return !!(tituloLivre(id) || valor(id));
+  /* o Nome entra também com só a titulação escrita: senão a visualização fica
+     vazia enquanto a pessoa digita, sem dizer por quê */
+  if(d.temTitulacao && titulacaoAberta() && valor("titulacao")) return true;
+  return !!valor(id);
 }
 function valor(id){ return exemplo ? (EXEMPLO[id] || "") : digitado(id); }
 function negrito(id){ const c = marca("b", id); return !!(c && c.checked); }
@@ -1140,8 +1255,14 @@ function ajustarCampoTel(d){
   const c = marca("c", d.id), w = marca("w", d.id);
   txt.placeholder = zap ? "+5521912345678" : d.dica;
   /* caixa alta é coisa de texto; WhatsApp é coisa de número */
-  if(w) w.disabled = !!(c && c.checked);
-  if(c) c.disabled = zap;
+  if(w){
+    w.disabled = !!(c && c.checked);
+    if(w.disabled) w.closest(".marc").title = "A caixa alta está marcada; remova-a para usar o WhatsApp";
+  }
+  if(c){
+    c.disabled = zap;
+    if(c.disabled) c.closest(".marc").title = "O WhatsApp está marcado; remova-o para usar a caixa alta";
+  }
   sincronizarEscolhas();
 }
 
@@ -1186,21 +1307,47 @@ function formaTitulo(id, primeiro, acompanhado){
   return abreviar && d.abrev ? d.abrev : d.titulo;
 }
 
-/* Escreve a forma: aplica a maiúscula quando cabe, a vírgula do modo corrido,
-   e o negrito só na palavra entre chaves — nunca no ":" nem na pontuação. */
-function escreverTitulo(forma, opcoes){
-  const o = opcoes || {};
-  let texto = forma;
-  if(!o.minusculo){
-    texto = texto.replace(/\{(.)/, (m, letra) => "{" + letra.toLocaleUpperCase("pt-BR"));
-  }
-  const negrito = el("titNegrito").checked;
-  return texto.replace(/\{([^}]*)\}/g, (m, palavra) => negrito ? B(palavra) : palavra);
+/* Reparte a forma em três: o que vem antes da palavra do título, a palavra que
+   carrega os efeitos, e o que vem depois — o ":" ou o conectivo "n." e "de". */
+function partesTitulo(forma){
+  const m = /^([^{]*)\{([^}]*)\}(.*)$/.exec(forma || "");
+  return m ? { pre:m[1], palavra:m[2], pos:m[3] } : { pre:"", palavra:"", pos:forma || "" };
+}
+const ITAL = t => '<span style="font-style:italic">' + t + '</span>';
+function vestir(texto, comN, comI){
+  if(!texto) return texto;
+  let t = texto;
+  if(comI) t = ITAL(t);
+  if(comN) t = B(t);
+  return t;
+}
+/* Escreve a forma já repartida, com a maiúscula de abertura, a caixa alta que a
+   congruência do trecho permitir e os efeitos que couberem a cada pedaço. */
+function escreverTitulo(forma, o){
+  const p = partesTitulo(forma);
+  if(!p.palavra && !p.pos) return "";
+  let palavra = p.palavra;
+  if(!o.minusculo && palavra) palavra = palavra.replace(/^./, c => c.toLocaleUpperCase("pt-BR"));
+  if(o.caixa) palavra = palavra.toLocaleUpperCase("pt-BR");
+  /* o conectivo — "n.", "de" — sobe junto com o trecho, mas não leva os efeitos
+     do título; só acompanha o campo quando o efeito é pleno */
+  let pos = o.caixaConectivo ? p.pos.toLocaleUpperCase("pt-BR") : p.pos;
+  return p.pre + vestir(palavra, o.negrito, o.italico) + vestir(pos, o.negritoPos, o.italicoPos);
 }
 
-function conteudo(id){
-  const bruto = valor(id);
+/* pontuação de fecho, só onde a regra manda: `tirarPontuacao` limpa o fim para o
+   vizinho entrar por vírgula; `pontoFinal` fecha a frase, trocando o que houver. */
+function conteudo(id, ajuste){
+  const a = ajuste || {};
+  let bruto = valor(id);
   if(!bruto) return "";
+  if(a.semRepetir){
+    /* o conectivo do título já disse a palavra; repeti-la no conteúdo produz "de de" */
+    const p = a.semRepetir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    bruto = bruto.replace(new RegExp("^" + p + "\\s+", "i"), "");
+  }
+  if(a.tirarPontuacao) bruto = bruto.replace(FIM_PONTUADO, "");
+  if(a.pontoFinal) bruto = bruto.replace(FIM_PONTUADO, "") + ".";
   const v = caixaAlta(id) ? bruto.toLocaleUpperCase("pt-BR") : bruto;
   if(porId[id].tel){
     if(!comWhats(id)) return esc(v);                       /* sem WhatsApp: texto puro, sem link */
@@ -1214,7 +1361,7 @@ function conteudo(id){
 }
 
 function corpoHTML(){
-  const EST_LINHA = 'font-size:14px; color:#000000; font-weight:400; line-height:1.4';
+  const EST_LINHA = 'font-size:' + TAM_CORPO + 'px; color:#000000; font-weight:400; line-height:1.4';
   const VAZIA = "";
   const ESPACO = '<span style="font-size:8px; line-height:8px;">&nbsp;</span>';
 
@@ -1232,24 +1379,90 @@ function corpoHTML(){
     /* o par Nome + Matrícula: a matrícula entra entre parênteses, em minúsculas */
     const parenteses = abreNome && grupo[1] === "matricula" ? "matricula" : null;
 
-    let linha = "", primeiro = true;
-    grupo.forEach(id => {
+    /* Cada peça sabe se entra por vírgula. Um "trecho" é a sequência ligada por
+       vírgulas: é a unidade da congruência da caixa alta. */
+    const pecas = grupo.map((id, i) => {
       const d = porId[id] || {};
-      const corpo = estilar(id, conteudo(id), id === "nome");
+      const forma = formaTitulo(id, i === 0, acompanhado);
+      /* `formaCorrida` é o título que entra na frase, com conectivo em vez de ":".
+         Ele segue a congruência do trecho mesmo quando abre a linha — "atendimento de
+         segunda a sexta" com o conteúdo em caixa comum não pede maiúscula no rótulo.
+         `corrido` é o mesmo, mas só quando há vizinho antes: é o que traz a vírgula. */
+      const formaCorrida = !!(d.corrido && forma && forma === d.abrev);
+      return { id, d, forma, formaCorrida, corrido: i > 0 && formaCorrida };
+    });
+    let trecho = 0;
+    pecas.forEach((p, i) => { if(i && !p.corrido) trecho++; p.trecho = trecho; });
+    /* o trecho vai a maiúsculas quando todo campo dele que TEM caixa alta está com ela;
+       quem não tem o botão — telefone, matrícula — não conta nem a favor nem contra */
+    const caixaDoTrecho = {};
+    pecas.forEach(p => {
+      if(caixaDoTrecho[p.trecho] === false) return;
+      const podeCaixa = !!marca("c", p.id);
+      if(podeCaixa && !caixaAlta(p.id)) caixaDoTrecho[p.trecho] = false;
+      else if(caixaDoTrecho[p.trecho] === undefined) caixaDoTrecho[p.trecho] = true;
+    });
+
+    /* pontuação de fecho: só Sala e Atendimento, e só na última posição preenchida.
+       Quando o vizinho seguinte entra por vírgula, a pontuação do anterior cede lugar. */
+    const ultima = pecas[pecas.length - 1];
+    pecas.forEach((p, i) => {
+      const seguinteCorrido = pecas[i+1] && pecas[i+1].corrido;
+      if(seguinteCorrido) p.tirarPontuacao = true;
+      else if(p === ultima && p.d.pontoFinal) p.pontoFinal = true;
+    });
+
+    let linha = "", primeiro = true;
+    pecas.forEach(({ id, d, forma, corrido, formaCorrida, trecho, tirarPontuacao, pontoFinal }) => {
+      /* "atendimento de" + "de segunda a sexta" viraria "de de": a repetição é engolida.
+         Vale para o "n." de Sala do mesmo jeito; o ":' de rótulo não conta, por não ter letra. */
+      const pos = partesTitulo(forma).pos.trim();
+      const conectivo = /[a-zà-ú]/i.test(pos) ? pos : "";
+      const escrito = conteudo(id, { tirarPontuacao, pontoFinal, semRepetir: conectivo });
+      let corpo = escrito ? estilar(id, escrito, id === "nome") : "";
+      /* a titulação entra colada ao Nome, com formatação só dela; sem nome ainda
+         digitado, sai sozinha, e sem espaço sobrando atrás */
+      if(id === "nome" && titulacaoAberta() && valor("titulacao")){
+        /* peso declarado à força: o invólucro da linha do Nome carrega o negrito dele,
+           e sem isto a titulação o herdaria, deixando o botão próprio sem efeito */
+        let t = conteudo("titulacao");
+        if(italico("titulacao")) t = ITAL(t);
+        t = '<span style="font-weight:' + (negrito("titulacao") ? "900" : "400") + '">' + t + '</span>';
+        corpo = corpo ? t + " " + corpo : t;
+      }
       /* o Nome guarda o corpo maior; o resto da linha volta ao tamanho comum */
       const vestir = p => id === "nome" ? '<span style="' + EST_NOME() + '">' + p + '</span>' : p;
 
       if(id === parenteses){
-        const forma = formaTitulo(id, false, acompanhado);
-        linha += " (" + escreverTitulo(forma, { minusculo:true }) + corpo + ")";
+        /* Dentro dos parênteses o rótulo não é título, é parte da frase.
+           Negrito e itálico dos títulos só o alcançam se o próprio campo tiver o
+           mesmo efeito, e aí valem do "(" ao ")". A caixa alta dos títulos só
+           alcança aqui se for o Nome que estiver em caixa alta. */
+        const rotulo = (d.podeAbreviar && abreviarTitulo(id)) ? d.abrevParenteses : d.tituloParenteses;
+        const plenoN = el("titNegrito").checked && negrito(id);
+        const plenoI = el("titItalico").checked && italico(id);
+        const plenoC = el("titCaixa").checked && caixaAlta("nome");
+        let dentro = conteudo(id);
+        if(italico(id) && !plenoI) dentro = '<span style="font-style:italic">' + dentro + '</span>';
+        if(negrito(id) && !plenoN) dentro = B(dentro);
+        let tudo = "(" + (plenoC ? rotulo.toLocaleUpperCase("pt-BR") : rotulo) + dentro + ")";
+        if(plenoI) tudo = '<span style="font-style:italic">' + tudo + '</span>';
+        if(plenoN) tudo = B(tudo);
+        linha += " " + tudo;
         return;
       }
-      const forma = formaTitulo(id, primeiro, acompanhado);
-      /* só a forma abreviada de Sala e Atendimento se cola por vírgula, e só fora da abertura */
-      const corrido = !primeiro && d.corrido && forma && forma === d.abrev;
-      /* o título do campo livre sai como a pessoa escreveu, sem maiúscula imposta */
-      const titulo = forma ? escreverTitulo(corrido ? ", " + forma : forma,
-                                            { minusculo: corrido || d.livre }) : "";
+      /* efeito pleno: o título e o conteúdo trazem o mesmo efeito, e aí a pontuação
+         entre eles — o ":" — deixa de ser a única exceção e acompanha */
+      const plenoN = el("titNegrito").checked && negrito(id);
+      const plenoI = el("titItalico").checked && italico(id);
+      const titulo = forma ? escreverTitulo(corrido ? ", " + forma : forma, {
+        minusculo: corrido,                    /* no meio da frase, minúscula */
+        /* rótulo obedece ao botão; título dentro da frase, à congruência do trecho */
+        caixa: el("titCaixa").checked && (formaCorrida ? caixaDoTrecho[trecho] !== false : true),
+        caixaConectivo: el("titCaixa").checked && caixaDoTrecho[trecho] !== false,
+        negrito: el("titNegrito").checked, italico: el("titItalico").checked,
+        negritoPos: plenoN, italicoPos: plenoI
+      }) : "";
       const peca = vestir(titulo + corpo);
       linha += primeiro ? peca : (corrido ? peca : " | " + peca);
       primeiro = false;
@@ -1288,7 +1501,7 @@ function gerar(){
 '<tbody>',
 '<tr>',
 '<td colspan="' + colunas + '" valign="top" style="font-family:Trebuchet MS,Helvetica,sans-serif;">',
-'<span style="font-size:12px; color:#000000; font-weight:400; line-height:1">Atenciosamente,</span>',
+'<span style="font-size:' + TAM_CORPO + 'px; color:#000000; font-weight:400; line-height:1.4">Atenciosamente,</span>',
 '</td>',
 '</tr>',
 '<tr>',
@@ -1319,6 +1532,8 @@ function atualizar(){
      Aqui ficam só os erros passageiros, que aparecem e somem conforme se digita. */
   const faltam = [];
   const semNome = !digitado("nome");
+  /* aberta, a titulação é obrigatória: ou se preenche, ou se fecha */
+  if(titulacaoAberta() && !digitado("titulacao")) faltam.push("Titulação em branco: preencha ou remova");
   defs.filter(d => d.tel).forEach(d => {
     const bruto = digitado(d.id);
     if(!bruto) return;
@@ -1341,6 +1556,9 @@ function atualizar(){
     t.querySelector(".limpar").style.display = cheio ? "flex" : "none";
     t.classList.toggle("cheio", cheio);
   });
+  /* a titulação mora dentro do bloco do Nome e tem o próprio estado de preenchida */
+  const cxTitulacao = document.querySelector(".titulacao");
+  if(cxTitulacao) cxTitulacao.classList.toggle("cheia", !!digitado("titulacao"));
 
   ajustarBotoesTitulo();
   sincronizarEscolhas();
@@ -1386,6 +1604,7 @@ el("btnCopiarSeguir").addEventListener("click", copiarCodigo);
 
 /* apaga só o conteúdo dos campos: títulos personalizados, marcações, disposição e barra ficam como estão */
 function limparDados(){
+  fecharTitulacao();     /* sem isso ela fica aberta e vazia, travando a geração seguinte */
   defs.forEach(d => { if(campo(d.id)) campo(d.id).value = ""; });
   atualizar();
 }
@@ -1468,6 +1687,13 @@ function reiniciarOcio(){
 el("tContinuar").addEventListener("click", () => { pararContagem(); reiniciarOcio(); });
 el("tApagar").addEventListener("click", apagarTudo);
 
+/* o passo a passo do webmail fica recolhido: quem já sabe colar não precisa dele */
+el("btnTour").addEventListener("click", () => {
+  const aberto = el("passosTour").classList.toggle("hide") === false;
+  el("btnTour").setAttribute("aria-expanded", aberto ? "true" : "false");
+  el("btnTour").textContent = aberto ? "Ocultar o passo a passo" : "Ver o passo a passo";
+});
+
 montarLogos();
 /* os outros selos são conferidos só depois que a página termina de carregar */
 const conferirDepois = () => {
@@ -1481,6 +1707,8 @@ sincronizarPaleta();
 el("cor").addEventListener("input", () => { sincronizarPaleta(); atualizar(); });
 el("titAuto").addEventListener("change", atualizar);
 el("titNegrito").addEventListener("change", atualizar);
+el("titItalico").addEventListener("change", atualizar);
+el("titCaixa").addEventListener("change", atualizar);
 el("espessura").addEventListener("input", () => { el("espessuraVal").textContent = el("espessura").value + "px"; atualizar(); });
 
 atualizar();

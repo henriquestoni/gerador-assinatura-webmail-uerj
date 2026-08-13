@@ -71,16 +71,62 @@
   .tile .obrig{font-weight:400;color:#8a6d00;font-size:11px}
   /* as marcações ficam recolhidas: o bloco mostra o nome, a alça e mais nada */
   .tile .opcs{display:none}
-  /* uma fileira só: os botões de título à esquerda, os de formato à direita */
-  .tile.aberto .opcs{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;margin:0 0 6px}
-  .opcs .grupo{display:inline-flex;flex-wrap:wrap;gap:5px}
+  /* uma fileira só: os botões de título à esquerda, os de formato à direita.
+     A margem automática encosta o formato à direita mesmo quando o campo não
+     tem botão de título nenhum, caso do Nome, da Lotação e do campo livre. */
+  .tile.aberto .opcs{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 6px}
+  .opcs .grupo, .opcsTit .grupo{display:inline-flex;flex-wrap:wrap;gap:5px}
+  .opcs .grupo.forma{margin-left:auto}
   .opcs .grupo.tit:empty{display:none}
+  .marc.oculta{display:none}
   .marc .sinal.titulo{font-weight:700;font-size:12px;letter-spacing:-.2px}
   .tile .abrir{height:18px;min-width:18px;font-size:13px;color:#6b7280;position:relative}
   .tile.aberto .abrir{transform:rotate(180deg);background:#eef2f6}
   .tile .abrir.temMarca::after{content:"";position:absolute;top:1px;right:0;
     width:5px;height:5px;border-radius:50%;background:var(--escolhaBorda)}
   .tile.aberto .abrir.temMarca::after{top:auto;bottom:1px;left:0;right:auto}
+  /* O bloco do Nome vira dois: a titulação, colada por fora à esquerda, e a caixa
+     do campo, que passa a ser quem tem borda e fundo. As duas crescem juntas. */
+  /* a base reserva o que a titulação ocupa; o resto da linha é rateado como sempre,
+     de modo que a caixa do Nome fique do tamanho das vizinhas */
+  .tile.comTitulacao{border:0;background:none;padding:0;display:flex;align-items:stretch;gap:6px;box-shadow:none;
+    flex:1 1 80px}
+  .tile.comTitulacao.titAberta{flex:1 1 156px}
+  .tile.comTitulacao > .caixaTile{flex:1 1 auto;min-width:0;background:#fff;
+    border:1px solid #c9ced6;border-radius:6px;padding:7px 8px}
+  .tile.comTitulacao.obrigatorio > .caixaTile{border-color:var(--azul)}
+  .tile.comTitulacao.cheio > .caixaTile{border-color:#9fb3c8;background:#fdfefe;box-shadow:inset 3px 0 0 var(--azul)}
+  /* titulação: fechada é só o botão, na altura da caixa; aberta, um campo com as marcações dela */
+  .titulacao{display:flex;align-items:stretch;flex:0 0 auto}
+  /* rótulo na horizontal, em duas ou três linhas: é o que se lê de fato */
+  /* fundo no amarelo das escolhas e borda azul, como a da caixa do Nome ao lado;
+     o ocre entra só ao passar o mouse, e o azul volta no clique */
+  .titulacao .abrirTit{height:auto;width:74px;padding:6px 6px;color:#5f6771;
+    border:1px solid var(--azul);border-radius:6px;background:var(--escolhaFundo);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .titulacao .abrirTit .mais{font-size:15px;font-weight:700;line-height:1}
+  .titulacao .abrirTit .rotuloTit{font-size:11px;font-weight:700;line-height:1.2;
+    white-space:normal;text-align:center;letter-spacing:.2px}
+  .titulacao .abrirTit:hover{border-color:var(--escolhaBorda);color:var(--escolhaTexto);
+    background:var(--escolhaFundoForte)}
+  .titulacao .abrirTit:active,
+  .titulacao .abrirTit:focus-visible{border-color:var(--azul);color:var(--azul);
+    background:var(--escolhaFundo)}
+  .titulacao .dentroTit{display:flex;flex-direction:column;justify-content:center;gap:5px;width:150px;
+    border:1px solid #c9ced6;border-radius:6px;padding:7px 8px;background:#fff}
+  /* preenchida, ganha o mesmo realce dos outros campos */
+  .titulacao.cheia .dentroTit{border-color:#9fb3c8;background:#fdfefe;box-shadow:inset 3px 0 0 var(--azul)}
+  .titulacao.cheia input[type=text]{background:#fff;border-color:#9fb3c8}
+  .titulacao .cabTit{display:flex;align-items:center;justify-content:space-between;gap:6px;
+    font-size:12px;font-weight:700;color:#555}
+  /* as marcações ficam acima do campo e encostadas à direita, como nos demais blocos */
+  .titulacao .opcsTit{display:flex;justify-content:flex-end}
+  .titulacao .fecharTit{height:18px;min-width:18px;font-size:11px;color:#c0392b}
+  .titulacao .fecharTit:hover{background:#fdecec;color:#8c1d13}
+  .titulacao .grupo.forma{justify-content:flex-end}
+  .titulacao.fechada .dentroTit{display:none}
+  .titulacao:not(.fechada) .abrirTit{display:none}
+  @media(max-width:640px){ .titulacao .dentroTit{width:auto;flex:1 1 auto} }
   .tile input.tituloLivre{margin-bottom:5px;font-weight:700}
   .tile input[type=text]{width:100%;padding:7px 8px;border:1px solid #c9ced6;border-radius:5px;font-size:13px;font-family:inherit}
   .tile input[type=text]:focus{outline:2px solid var(--azul);outline-offset:-1px}
@@ -158,6 +204,15 @@
   .barraBotoes{align-items:center}
   .sep{width:1px;align-self:stretch;background:#dfe3e8;margin:2px 4px}
   button.icone{font-size:17px;line-height:1;padding:8px 12px}
+  /* passo a passo do webmail: ocupa a largura toda, abaixo das duas colunas */
+  .tour{margin-top:24px}
+  .tour .tituloLinha{justify-content:space-between;align-items:center;margin:0}
+  .tour .tituloLinha button{font-size:12px;padding:6px 12px}
+  .tour .passos{margin:0;padding-left:22px;font-size:13px;line-height:1.55;color:#3d4650}
+  .tour .passos li{margin:0 0 10px}
+  .tour .passos li::marker{font-weight:700;color:var(--azul)}
+  .tour .passos li.atencao{background:#fdf6e3;border-left:3px solid var(--escolhaBorda);
+    border-radius:0 5px 5px 0;padding:8px 10px;margin-left:-10px}
   .credito{margin:22px 0 0;text-align:center;font-size:12px;color:#5f6771}
   .credito a{color:#5f6771}
   .preview{background:#fff;border:1px dashed #c9ced6;border-radius:8px;padding:16px;overflow:auto}

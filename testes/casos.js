@@ -230,7 +230,7 @@ caso("Títulos", "Sala acompanhada se cola ao vizinho por vírgula", ok => {
   c.digitar("cargo", "Técnico");
   c.digitar("sala", "3.002");
   juntar(c, ["cargo", "sala"]);
-  ok(texto(c) === "Técnico, sala n. 3.002", texto(c));
+  ok(texto(c) === "Técnico, sala n. 3.002.", texto(c));   /* Sala fecha a linha com ponto */
   c.fechar();
 });
 
@@ -240,7 +240,7 @@ caso("Títulos", "Sala e Atendimento juntos correm na mesma frase", ok => {
   c.digitar("sala", "3.002");
   c.digitar("atendimento", "9h às 17h");
   juntar(c, ["cargo", "sala", "atendimento"]);
-  ok(texto(c) === "Técnico, sala n. 3.002, atendimento de 9h às 17h", texto(c));
+  ok(texto(c) === "Técnico, sala n. 3.002, atendimento de 9h às 17h.", texto(c));
   c.fechar();
 });
 
@@ -249,7 +249,7 @@ caso("Títulos", "a primeira posição é a do primeiro campo PREENCHIDO", ok =>
   c.digitar("sala", "3.002");
   c.digitar("atendimento", "9h às 17h");
   juntar(c, ["cargo", "sala", "atendimento"]);          /* cargo fica vazio */
-  ok(texto(c) === "Sala n. 3.002, atendimento de 9h às 17h", texto(c));
+  ok(texto(c) === "Sala n. 3.002, atendimento de 9h às 17h.", texto(c));
   c.fechar();
 });
 
@@ -262,12 +262,73 @@ caso("Títulos", "Matrícula escapa da automação: nunca fica sem rótulo", ok 
   c.fechar();
 });
 
-caso("Títulos", "Nome e Matrícula na mesma linha: parênteses e minúsculas", ok => {
+caso("Títulos", "Nome e Matrícula: parênteses, minúsculas e 'n.' no lugar do ':'", ok => {
   const c = abrir();
   c.digitar("nome", "Maria da Silva");
-  c.digitar("matricula", "000000");
+  c.digitar("matricula", "434472");
   juntar(c, ["nome", "matricula"]);
-  ok(texto(c) === "Maria da Silva (matrícula: 00.000-0)", texto(c));
+  const completo = texto(c);
+  c.marcar("r_matricula", true);
+  ok(completo === "Maria da Silva (matrícula n. 43.447-2)"
+     && texto(c) === "Maria da Silva (mat. n. 43.447-2)",
+     { completo, abreviado: texto(c) });
+  c.fechar();
+});
+
+/* Dentro dos parênteses os efeitos de título só alcançam o rótulo quando o campo
+   tem o mesmo efeito; aí valem do "(" ao ")". A caixa alta depende do Nome. */
+const parentesear = c => {
+  c.digitar("nome", "Toni Henriques");
+  c.digitar("matricula", "434472");
+  juntar(c, ["nome", "matricula"]);
+  c.marcar("r_matricula", true);
+};
+
+caso("Títulos", "parênteses: título em negrito sozinho não alcança o rótulo", ok => {
+  const c = abrir();
+  parentesear(c);                                  /* "Títulos em negrito" já vem ligado */
+  ok(!c.api.corpoHTML().includes('font-weight:900">(mat.'), c.api.corpoHTML());
+  c.fechar();
+});
+
+caso("Títulos", "parênteses: com N no campo e nos títulos, o negrito vai de ( a )", ok => {
+  const c = abrir();
+  parentesear(c);
+  c.marcar("b_matricula", true);
+  ok(c.api.corpoHTML().includes('font-weight:900">(mat. n. 43.447-2)'), c.api.corpoHTML());
+  c.fechar();
+});
+
+caso("Títulos", "parênteses: N só no campo estiliza apenas o número", ok => {
+  const c = abrir();
+  parentesear(c);
+  c.marcar("titNegrito", false);
+  c.marcar("b_matricula", true);
+  const corpo = c.api.corpoHTML();
+  ok(corpo.includes('(mat. n. <span style="font-weight:900">43.447-2</span>)'), corpo);
+  c.fechar();
+});
+
+caso("Títulos", "parênteses: a caixa alta depende do Nome estar em caixa alta", ok => {
+  const c = abrir();
+  parentesear(c);
+  c.marcar("titCaixa", true);
+  const semAa = c.api.corpoHTML().includes("(mat. n.");
+  c.marcar("c_nome", true);
+  ok(semAa && c.api.corpoHTML().includes("(MAT. N. 43.447-2)"), c.api.corpoHTML());
+  c.fechar();
+});
+
+caso("Títulos", "o título do campo livre também ganha maiúscula na abertura da linha", ok => {
+  const c = abrir();
+  c.digitar("t_livre", "teste");
+  c.digitar("livre", "testado");
+  const sozinho = texto(c);
+  c.digitar("cargo", "Técnico");
+  juntar(c, ["cargo", "livre"]);
+  c.marcar("titAuto", false);
+  ok(sozinho === "Teste: testado" && texto(c) === "Cargo: Técnico | Teste: testado",
+     { sozinho, acompanhado: texto(c) });
   c.fechar();
 });
 
@@ -348,6 +409,133 @@ caso("Títulos", "campo livre: título e conteúdo aparecem um sem o outro", ok 
   c.digitar("t_livre", "");
   c.digitar("livre", "24h");
   ok(soTitulo === "Plantão:" && texto(c) === "24h", { soTitulo, soConteudo: texto(c) });
+  c.fechar();
+});
+
+caso("Títulos", "o passo a passo do webmail abre e fecha, e nomeia o botão Fonte", ok => {
+  const c = abrir();
+  const fechado = c.el("passosTour").classList.contains("hide");
+  c.clicar("btnTour");
+  const aberto = !c.el("passosTour").classList.contains("hide")
+              && c.el("btnTour").getAttribute("aria-expanded") === "true";
+  const citaFonte = c.el("passosTour").textContent.includes("Fonte");
+  c.clicar("btnTour");
+  ok(fechado && aberto && citaFonte && c.el("passosTour").classList.contains("hide"));
+  c.fechar();
+});
+
+/* ------------------------------------------------------------ titulação */
+
+const abrirTit = c => c.clicar(c.w.document.querySelector(".abrirTit"));
+const titAberta = c => !c.w.document.querySelector(".titulacao").classList.contains("fechada");
+
+caso("Titulação", "começa fechada, como um botão colado ao Nome", ok => {
+  const c = abrir();
+  ok(!titAberta(c) && !!c.w.document.querySelector(".abrirTit") && c.api.el("titulacao") !== null);
+  c.fechar();
+});
+
+caso("Titulação", "aberta, sai colada ao nome e sem título próprio", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Prof. Dr.");
+  c.digitar("nome", "Toni Henriques");
+  ok(texto(c) === "Prof. Dr. Toni Henriques", texto(c));
+  c.fechar();
+});
+
+caso("Titulação", "a caixa alta do Nome e a dos títulos não a alcançam", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Prof. Dr.");
+  c.digitar("nome", "Toni Henriques");
+  c.marcar("c_nome", true);
+  c.marcar("titCaixa", true);
+  ok(texto(c) === "Prof. Dr. TONI HENRIQUES", texto(c));
+  c.fechar();
+});
+
+caso("Titulação", "vem com negrito, e o negrito dela é independente do Nome", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Prof. Dr.");
+  c.digitar("nome", "Toni Henriques");
+  const veioMarcada = c.api.el("b_titulacao").checked;
+  const comPeso = c.api.corpoHTML().includes('font-weight:900">Prof. Dr.</span>');
+  c.marcar("b_titulacao", false);
+  /* o Nome continua em negrito pelo invólucro da linha; só a titulação afina */
+  ok(veioMarcada && comPeso && c.api.corpoHTML().includes('font-weight:400">Prof. Dr.</span>')
+     && c.api.corpoHTML().includes("font-weight:700"), c.api.corpoHTML());
+  c.fechar();
+});
+
+caso("Titulação", "só ela preenchida já aparece na visualização", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Professor Doutor");
+  ok(texto(c) === "Professor Doutor", texto(c));
+  c.fechar();
+});
+
+caso("Titulação", "aberta e vazia, é obrigatória", ok => {
+  const c = abrir();
+  c.digitar("nome", "Ana");
+  const antes = c.el("btnGerar").disabled;
+  abrirTit(c);
+  ok(!antes && c.el("btnGerar").disabled && /Titula/i.test(c.el("pendencia").textContent),
+     c.el("pendencia").textContent);
+  c.fechar();
+});
+
+caso("Titulação", "o ✕ apaga o conteúdo e devolve as marcações ao padrão", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Me.");
+  c.marcar("i_titulacao", true);
+  c.marcar("b_titulacao", false);
+  c.clicar(c.w.document.querySelector(".fecharTit"));
+  ok(!titAberta(c) && c.el("titulacao").value === ""
+     && c.api.el("i_titulacao").checked === false      /* itálico não é padrão */
+     && c.api.el("b_titulacao").checked === true,      /* negrito é */
+     { italico: c.api.el("i_titulacao").checked, negrito: c.api.el("b_titulacao").checked });
+  c.fechar();
+});
+
+caso("Titulação", "Recomeçar e o expurgo fecham a titulação", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Prof."); c.digitar("nome", "Ana");
+  c.clicar("btnGerar");
+  c.clicar("btnRecomecar");
+  const fechouNoRecomecar = !titAberta(c) && c.el("pendencia").textContent === "";
+  abrirTit(c);
+  c.digitar("titulacao", "Prof."); c.digitar("nome", "Ana");
+  c.api.apagarTudo();
+  ok(fechouNoRecomecar && !titAberta(c) && c.el("titulacao").value === "");
+  c.fechar();
+});
+
+caso("Titulação", "restaurar padrões fecha a titulação e acusa a mudança", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Prof.");
+  const acusou = c.api.camposMudaram() === true;
+  c.api.aplicar(c.api.PADRAO, false, true, undefined, c.api.TRAVAS_PADRAO);
+  ok(acusou && !titAberta(c) && c.el("titulacao").value === "");
+  c.fechar();
+});
+
+caso("Titulação", "desfazer devolve a titulação com a reserva de largura", ok => {
+  const c = abrir();
+  abrirTit(c);
+  c.digitar("titulacao", "Dra.");
+  c.api.registrarAgora();
+  c.clicar(c.w.document.querySelector(".fecharTit"));
+  c.api.desfazer();
+  ok(titAberta(c) && c.api.tile("nome").classList.contains("titAberta")
+     && c.el("titulacao").value === "Dra.",
+     { aberta: titAberta(c), reserva: c.api.tile("nome").classList.contains("titAberta"),
+       valor: c.el("titulacao").value });
   c.fechar();
 });
 
