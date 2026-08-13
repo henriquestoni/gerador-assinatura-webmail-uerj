@@ -62,7 +62,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Assinatura de e-mail Uerj</h1>
+    <h1>Assinatura para uso no webmail da UERJ</h1>
     <p class="sub">Monte sua assinatura, gere o código e cole no webmail da Uerj.</p>
   </header>
 
@@ -75,7 +75,14 @@
         <b>Ordem e agrupamento:</b> arraste pela alça ⠿ (ou dê foco nela com Tab e use as setas). Blocos na mesma linha saem lado a lado, separados por barra, até três por linha; em linhas diferentes, saem um embaixo do outro.<br>
         <b>Espaços:</b> uma linha sem nenhum campo abre um respiro entre os campos de cima e os de baixo; duas ou três seguidas aumentam o espaço. Linhas assim no começo e no fim não produzem nada.<br>
         <b>Linhas:</b> ▲ e ▼ movem a linha inteira, e só aparecem quando há para onde ir; 🗑 elimina a linha, nas vazias e nas que só tenham campos livres. Tirar o último bloco de uma linha não a elimina: ela fica ali, vazia, à sua disposição.<br>
-        <b>Em cada bloco:</b> a setinha ⌄ abre as opções daquele campo, e um ponto nela avisa quando há alguma fora do padrão. À esquerda ficam as do título, <b>T</b> para mostrá-lo e <b>T.</b> para abreviá-lo; à direita, as da forma do conteúdo, <b>Aa</b> de caixa alta, <b>N</b> de negrito, <b>I</b> de itálico, mais o WhatsApp nos campos de telefone. A lixeirinha apaga só aquele campo. Tudo é reversível com Ctrl+Z.</p>
+        <b>A setinha ⌄ de cada bloco</b> abre uma barra de opções daquele campo, e a fecha de novo. Ela vem fechada para o bloco mostrar só o que importa, o nome e o conteúdo; um <b>ponto ocre</b> na setinha avisa que ali dentro há alguma opção fora do padrão do campo, e a dica do mouse diz qual.<br>
+        <b>A barra tem dois lados.</b> À esquerda, o título do campo: <b>T</b> mostra ou oculta, <b>T.</b> troca a forma completa pela abreviada. Onde a automação estiver no comando, os dois ficam apagados. À direita, a forma do conteúdo: <b>Aa</b> de caixa alta, <b>N</b> de negrito, <b>I</b> de itálico, e o balão do WhatsApp nos campos que aceitam telefone. Cada campo mostra só os que lhe servem — não há caixa alta em campo de algarismos, nem título em Nome e Lotação.<br>
+        <b>Em cada bloco:</b> a lixeirinha apaga só aquele campo, e aparece quando há o que apagar. Tudo é reversível com Ctrl+Z.<br>
+        <b>O botão colado à esquerda do Nome</b> acrescenta uma <b>titulação</b> — Prof., Dr.ª, Me. — que sai antes do nome e anda sempre junto dele, com caixa alta, negrito e itálico próprios; o negrito dela vem marcado. Aberta, ela é obrigatória. O ✕ remove a titulação e apaga o que estiver escrito, e o Ctrl+Z devolve.</p>
+      <p class="ajuda hide"><b>WhatsApp:</b> marcado o balão num campo de telefone ou no campo livre, o número vira link. A regra do WhatsApp é uma só: número completo em formato internacional, sem "+", sem zeros de prefixo, sem parênteses e sem traços, com no máximo 15 algarismos.<br>
+        <b>O que a página aceita:</b> a forma brasileira <i>(21)91234-5678</i>, com ou sem o nono dígito, a internacional <i>+5521912345678</i> ou <i>0055…</i>, e também 0800, que perde o zero e ganha o 55 — <i>0800 570 0800</i> vira <i>wa.me/558005700800</i>.<br>
+        <b>O que ela recusa, dizendo o motivo:</b> número nacional com menos de 10 ou mais de 11 algarismos, número sem DDD como 4004-1234, e qualquer conteúdo com letra: <i>(21)2334-0000, ramal 210</i> colaria o 210 no fim e produziria um link errado.<br>
+        <b>Sobre 0800:</b> a Meta não o proíbe, mas ele só se registra pela API do WhatsApp Business, por parceiro oficial — no aplicativo comum a ligação de verificação esbarra na própria URA.</p>
       <p class="ajuda hide"><b>🔓 Cadeado:</b> fecha a linha para mudanças de estrutura. A linha travada não sobe, não desce, não é eliminada, não recebe bloco arrastado e não deixa sair o que está nela; as setas e a lixeira dela somem. O que continua livre é o essencial: <b>o texto e as marcações dos campos seguem editáveis</b>.<br>
         <b>Por que existe:</b> a linha do Nome já vem travada, e é isso que a mantém no alto. Destrave se quiser levá-la para outro lugar; trave as demais quando a disposição estiver do jeito que você quer e não quiser desfazê-la sem querer.<br>
         <b>Efeito nas vizinhas:</b> uma linha nunca para dentro de um trecho travado. Ao subir, ela salta o bloco de linhas travadas e para logo acima dele. Se tudo o que está acima estiver travado, a seta para cima não tem função; o mesmo vale para baixo.</p>
@@ -88,6 +95,9 @@
 
     <div class="card">
       <h2 class="tituloLinha">Visualização <button type="button" class="lamp" title="Mostrar dicas" aria-label="Mostrar dicas" aria-expanded="false">💡</button></h2>
+      <p class="ajuda hide"><b>O que se vê aqui é o que sai no e-mail:</b> a mesma tabela, com os mesmos estilos embutidos.<br>
+        <b>"Atenciosamente,"</b> sai no mesmo tamanho do corpo da assinatura, 14px, e não é editável — é o fecho padrão.<br>
+        <b>Logotipo e barra:</b> a imagem vem do servidor da Uerj a cada leitura da mensagem, então pode demorar a aparecer sem que haja erro.</p>
       <p class="dica" id="notaExemplo" style="margin:0 0 8px">O exemplo passa a mostrar seus dados assim que você digitar o primeiro campo.</p>
       <div class="preview" id="preview"></div>
 
@@ -104,13 +114,18 @@
           <h2>Títulos</h2>
           <p class="ajuda hide"><b>Automatizar títulos:</b> age só nas linhas com mais de um campo preenchido, e ali silencia os títulos, deixando os conteúdos separados por barra. Linha de um campo só obedece aos botões do próprio bloco.<br>
             <b>Exceções:</b> Matrícula, Sala e Atendimento nunca ficam sem rótulo, senão o conteúdo deles fica ilegível. Acompanhados, Sala e Atendimento se colam ao vizinho por vírgula: <i>Cargo: Técnico, sala n. 3.002</i>.<br>
-            <b>Nome e Matrícula na mesma linha:</b> a matrícula entra entre parênteses, em minúsculas: <i>Maria da Silva (mat. 00.000-0)</i>.<br>
+            <b>Nome e Matrícula na mesma linha:</b> a matrícula entra entre parênteses, em minúsculas e com "n." no lugar dos dois-pontos: <i>Maria da Silva (mat. n. 00.000-0)</i>.<br>
             <b>Botões T e T. de cada bloco:</b> o primeiro mostra ou oculta o título; o segundo troca a forma completa pela abreviada. Enquanto a automação estiver no comando daquela linha, os dois ficam apagados.<br>
-            <b>Títulos em negrito:</b> controla apenas os títulos, e nunca alcança o ":" nem a pontuação. O negrito do conteúdo continua em cada bloco.<br>
+            <b>Negrito, itálico e caixa alta dos títulos:</b> os três se somam e valem só para a palavra do título. Nem o ":", nem a vírgula, nem o "n." ou o "de" os recebem — só o ponto que abrevia a própria palavra, como o de "Mat.". Se o título e o conteúdo estiverem os dois com o mesmo efeito, aí o ":" entre eles acompanha, para não ficar sendo a única exceção.<br>
+            <b>Caixa alta tem regra própria:</b> o título que abre o trecho e é seguido de ":" obedece só ao botão. Já o título que entra por vírgula no meio da frase, e os "n." e "de", só sobem se <b>todo o trecho</b> estiver em caixa alta. Sem isso sairia <i>SALA n. 11.050, bloco C</i>, com maiúscula em cima de texto comum.<br>
+            <b>Ponto final:</b> Sala e Atendimento fecham a frase com ponto quando ocupam a última posição preenchida da linha, trocando a pontuação que você tiver escrito ali. Os dois na mesma linha, o ponto sai só no fim. Nenhum outro campo recebe pontuação de fecho.<br>
+            <b>Sem repetição:</b> escrever "de segunda a sexta" no Atendimento sai como <i>atendimento de segunda a sexta</i>, e não "de de".<br>
             <b>Campo livre:</b> usa o título que você escrever. Título e conteúdo aparecem de forma independente: um sem o outro, sai o que houver.</p>
           <div class="escolhas">
             <label class="marc"><input type="checkbox" id="titAuto" autocomplete="off" checked> Automatizar títulos</label>
             <label class="marc"><input type="checkbox" id="titNegrito" autocomplete="off" checked> Títulos em negrito</label>
+            <label class="marc"><input type="checkbox" id="titItalico" autocomplete="off"> Títulos em itálico</label>
+            <label class="marc"><input type="checkbox" id="titCaixa" autocomplete="off"> Títulos em caixa alta</label>
           </div>
         </section>
       </div>
@@ -149,7 +164,8 @@
 <p class="ajuda hide" style="margin-top:12px"><b>Recomeçar:</b> apaga apenas o conteúdo dos campos. Títulos de campos livres, marcações, disposição e barra continuam como você deixou.<br>
           <b>Apenas copiar:</b> copia o HTML e mantém tudo preenchido, caso precise gerar outra versão.<br>
           <b>Copiar e recomeçar:</b> copia e, só se a cópia der certo, apaga o conteúdo dos campos, mantendo tudo o mais. Use ao terminar, para não deixar dados pessoais na tela. Para zerar também títulos e disposição, use Restaurar padrões.<br>
-          <b>Onde colar:</b> no webmail da Uerj, abra as preferências de assinatura, ative a edição em HTML ou código-fonte e cole o conteúdo copiado.</p>
+          <b>Onde colar:</b> no webmail da Uerj, abra as preferências de assinatura, ative a edição em HTML ou código-fonte e cole o conteúdo copiado. O passo a passo detalhado está no fim desta página.<br>
+          <b>Página esquecida aberta:</b> com algum campo preenchido e dez minutos sem uso, a página avisa e conta sessenta segundos; sem resposta, apaga tudo o que foi digitado e recomeça. É para não deixar dado pessoal na tela de uma máquina compartilhada. Qualquer tecla ou clique reinicia a contagem.</p>
 
         <div class="row botoesFinais">
           <button type="button" class="sec" id="btnRecomecar" title="Apaga o conteúdo dos campos; títulos, marcações e disposição continuam">Recomeçar</button>
@@ -160,6 +176,33 @@
       </div>
     </div>
   </div>
+
+  <section class="card tour">
+    <h2 class="tituloLinha">Como colocar a assinatura no webmail
+      <button type="button" class="sec" id="btnTour" aria-expanded="false" aria-controls="passosTour">Ver o passo a passo</button>
+    </h2>
+    <div id="passosTour" class="hide">
+      <p class="dica" style="margin:0 0 14px">O webmail da Uerj é o SOGo. Os nomes abaixo são os que aparecem na tela, em português.</p>
+      <ol class="passos">
+        <li><b>Copie o código.</b> Aqui em cima, clique em <b>Gerar código</b> e depois em <b>Copiar e recomeçar</b>. O código vai para a área de transferência.</li>
+        <li><b>Abra o webmail</b> em <a href="https://webmail.uerj.br" target="_blank" rel="noopener noreferrer">webmail.uerj.br</a> e entre com seu usuário e senha.</li>
+        <li><b>Vá às Preferências.</b> No alto da coluna da esquerda, ao lado do seu nome, clique na engrenagem <b>Preferências</b>.</li>
+        <li><b>Escolha a aba Correio</b>, na lista à esquerda, e depois a sub-aba <b>CONTAS IMAP</b>.</li>
+        <li><b>Abra a conta.</b> Clique no lápis <b>Editar Contas</b>, na linha do seu endereço.</li>
+        <li><b>Ache a identidade.</b> Na caixa que abrir, desça até <b>Identidades</b> e clique na sua identidade padrão. Abaixo do <b>Nome Completo</b> e do <b>E-mail</b> está o campo <b>Assinatura</b>.</li>
+        <li class="atencao"><b>Troque para o código-fonte.</b> Na barra do campo Assinatura, clique no botão <b>Fonte</b>. Ele não muda o tipo de letra: é o botão que mostra o código-fonte, e o nome confunde. A caixa fica com fundo branco e letra de máquina.<br>
+          <b>Não cole sem apertar Fonte antes.</b> Colado no editor comum, o código vira texto solto e a tabela se desmancha.</li>
+        <li><b>Cole com Ctrl+V</b> dentro dessa caixa. Se já houver algo ali, apague antes com Ctrl+A e Delete.</li>
+        <li class="atencao"><b>Aperte Fonte de novo.</b> Esse segundo clique não é conferência: é o que faz o editor absorver o que você colou. Saindo do modo código, a assinatura aparece montada, com o logotipo e a barra colorida. Se você salvar ainda no código-fonte, o conteúdo pode não ser gravado.<br>
+          Se o logotipo demorar a aparecer, não é erro: a imagem vem do servidor da Uerj a cada leitura da mensagem.</li>
+        <li class="atencao"><b>Marque a identidade como padrão.</b> Na lista de <b>Identidades</b>, o coração indica qual delas o webmail usa ao escrever. Se você tiver mais de uma e editou a que não está marcada, clique no coração dela: sem isso, a assinatura que você acabou de colar não aparece nas mensagens.<br>
+          Logo acima da lista há também <b>Sempre use a identidade padrão ao responder a mensagens</b>, útil para que as respostas saiam com a mesma assinatura.</li>
+        <li><b>Salve duas vezes.</b> Primeiro <b>OK</b>, no pé da caixa; depois o disquete <b>salvar</b>, no alto da tela de Preferências. Sem o segundo, nada é gravado.</li>
+        <li><b>Teste.</b> Escreva uma mensagem para você mesmo e veja se a assinatura entra sozinha.</li>
+      </ol>
+      <p class="dica">Para trocar a assinatura depois, é o mesmo caminho: o código novo substitui o antigo dentro do <b>Fonte</b>.</p>
+    </div>
+  </section>
 
   <p class="credito">Desenvolvido por Toni Henriques | <a href="mailto:oliveira.toni@uerj.br">oliveira.toni@uerj.br</a></p>
 </div>

@@ -24,7 +24,9 @@ npm install jsdom
 node testes/executar.js
 ```
 
-Cento e um casos cobrindo geração do HTML, títulos, validação, matriz, escolhas, cadeado, histórico, restauração, cópia e expurgo por inatividade, além de uma bateria de quatrocentas operações aleatórias que confere os invariantes da matriz. A seção "Títulos" tem um caso para cada linha da tabela de decisão. Para rodar só uma seção: `node testes/executar.js Matriz`. O comando devolve código de saída 1 se algo falhar.
+Cento e dezessete casos cobrindo geração do HTML, títulos, titulação, validação, matriz, escolhas, cadeado, histórico, restauração, cópia e expurgo por inatividade, além de uma bateria de quatrocentas operações aleatórias que confere os invariantes da matriz. As seções "Títulos" e "Titulação" têm um caso para cada linha das tabelas de decisão. Para rodar só uma seção: `node testes/executar.js Matriz`. O comando devolve código de saída 1 se algo falhar.
+
+O que a bateria **não** alcança, e continua dependendo de conferência à mão: o arraste com mouse e com toque, que exige layout, e a aparência da assinatura depois de colada num cliente de e-mail de verdade.
 
 ## Campos
 
@@ -43,6 +45,19 @@ Cada bloco da matriz é um campo. Campo vazio não aparece no resultado.
 | Sala | `Sala:` | `Sala n.` · `, sala n.` acompanhada | nunca fica sem rótulo |
 | Atendimento | `Atendimento:` | `Atendimento de` · `, atendimento de` acompanhado | nunca fica sem rótulo |
 | Campo livre | título digitado por quem usa, sempre terminado em `:` | — | título e conteúdo aparecem um sem o outro |
+| Titulação | — | — | mora dentro do bloco do Nome; ver adiante |
+
+### Titulação
+
+O botão **＋ Adicionar titulação**, colado por fora à esquerda do bloco do Nome, abre um campo para `Prof.`, `Dr.ª`, `Me.` e afins. Ele sai imediatamente antes do nome, separado por um espaço, e **anda sempre junto**: mover o Nome de linha leva a titulação atrás, aberta ou fechada.
+
+- Tem **Aa**, **N** e **I** próprios, acima do campo e encostados à direita. O **N** vem marcado, como no Nome.
+- O negrito dela é independente do negrito do Nome: a titulação declara o próprio peso na saída, e por isso os dois botões produzem quatro combinações distintas.
+- A **caixa alta do Nome e a dos títulos não a alcançam**. Só o Aa dela própria.
+- Aberta, é **obrigatória**: ou se preenche, ou se fecha.
+- O **✕** remove a titulação, apaga o que estiver escrito e devolve as marcações ao padrão. Ctrl+Z desfaz.
+- **Recomeçar**, **Copiar e recomeçar**, **Restaurar padrões** e o expurgo por inatividade fecham a titulação junto — deixá-la aberta e vazia travaria a geração seguinte.
+- Enquanto ela está aberta, o bloco do Nome reserva a largura dela antes do rateio da linha, para a caixa do Nome não ficar espremida contra os vizinhos.
 
 ### Títulos
 
@@ -59,11 +74,35 @@ Cada bloco traz, à esquerda das opções, **T** para mostrar ou ocultar o títu
 
 Três exceções escapam da automação, porque sem rótulo o conteúdo delas fica ilegível: **Matrícula**, que mantém a forma escolhida no botão, e **Sala** e **Atendimento**, que acompanhados assumem a forma corrida e se colam ao vizinho por vírgula — `Cargo: Técnico, sala n. 3.002, atendimento de 9h às 17h`.
 
-**Nome e Matrícula na mesma linha**, com o Nome à frente, é caso à parte: a matrícula entra entre parênteses e em minúsculas — `Maria da Silva (mat. 00.000-0)`.
+**Nome e Matrícula na mesma linha**, com o Nome à frente, é caso à parte: a matrícula entra entre parênteses, em minúsculas e com `n.` no lugar dos dois-pontos — `Toni Henriques (matrícula n. 43.447-2)` ou `Toni Henriques (mat. n. 43.447-2)`.
 
-A primeira posição da linha é a do primeiro campo **preenchido**, não a da grade: se o campo à esquerda estiver vazio, quem abre a linha é o seguinte, e vai com maiúscula e sem vírgula.
+Ali dentro o rótulo não é título, é parte da frase, e por isso os efeitos se combinam de outro jeito:
 
-O negrito dos títulos alcança só a palavra. Nem o `:`, nem a vírgula, nem o `n.` ou o `de` entram em negrito.
+| Efeito | Alcança o parêntese quando |
+| --- | --- |
+| Negrito | "Títulos em negrito" **e** o **N** do campo Matrícula estão ligados; então vale do `(` ao `)` |
+| Itálico | "Títulos em itálico" **e** o **I** do campo Matrícula estão ligados; idem |
+| Caixa alta | "Títulos em caixa alta" **e** o **Aa** do campo **Nome** estão ligados |
+
+Com o efeito só no campo, e não nos títulos, ele estiliza apenas o número, como em qualquer outro campo.
+
+A primeira posição da linha é a do primeiro campo **preenchido**, não a da grade: se o campo à esquerda estiver vazio, quem abre a linha é o seguinte, e vai com maiúscula e sem vírgula. A maiúscula na abertura, e depois de cada `|`, vale também para o título que você escrever no campo livre.
+
+### Negrito, itálico e caixa alta dos títulos
+
+Os três botões da coluna Títulos são independentes e se somam. Valem só para a palavra do título: nem o `:`, nem a vírgula, nem o `n.` ou o `de` os recebem. A exceção é o ponto que abrevia a própria palavra — o de `Mat.` —, que faz parte dela e acompanha.
+
+**A pontuação acompanha quando os dois lados acompanham.** Se o título e o conteúdo estiverem ambos em negrito, o `:` entre eles deixa de ser a única exceção e engrossa junto. Sozinho de um lado só, fica como está.
+
+**Caixa alta tem regra própria de congruência.** Um título em posição de rótulo — o que abre o trecho e é seguido de `:` — obedece só ao botão. Já o título em posição corrida, o que entra por vírgula no meio da frase, e os conectivos `n.` e `de` só vão a maiúsculas se **todo o trecho de vírgula** estiver em caixa alta. Campos sem botão Aa, como telefone e matrícula, não contam na conta. Sem isso, sairiam coisas como `SALA n. 11.050, bloco C, ATENDIMENTO de terça a domingo` — maiúscula em cima de texto em caixa comum.
+
+### Pontuação de fecho
+
+Sala e Atendimento, quando ocupam a **última posição preenchida** da linha, ganham um ponto final; se você já tiver escrito outra pontuação ali, ela é substituída pelo ponto. Nenhum outro campo recebe pontuação de fecho.
+
+Quando os dois estão na mesma linha, o ponto sai só depois do último, e a pontuação que houver no fim do primeiro cede lugar à vírgula do segundo.
+
+O conectivo do título não se repete no conteúdo: escrever `de segunda a sexta` no Atendimento sai como `atendimento de segunda a sexta`, e não `de de`. O mesmo vale para o `n.` de Sala.
 
 ### Como se escolhe
 
@@ -81,7 +120,8 @@ As marcações ficam recolhidas atrás da setinha ⌄ de cada bloco; um ponto oc
 | balão | WhatsApp | gera link `wa.me` a partir do número, nos campos de telefone e no campo livre |
 
 Caixa alta e WhatsApp se excluem: um é coisa de texto, o outro é coisa de número.
-- **Lixeira do bloco** (vermelha, só aparece com conteúdo): apaga o conteúdo daquele campo, e o título, no caso do campo livre.
+
+A **lixeira do bloco**, vermelha, só aparece com conteúdo, e apaga apenas aquele campo — no campo livre, também o título.
 
 ## Controles de linha
 
@@ -131,6 +171,8 @@ O cadeado também governa a vizinhança:
 | ↶ Desfazer | acende quando há passo anterior | desfaz a última ação; também Ctrl+Z |
 | ↷ Refazer | acende quando há passo desfeito | refaz; também Ctrl+Shift+Z ou Ctrl+Y |
 | Gerar código | acende com o Nome preenchido e sem campo incompleto | mostra o HTML pronto abaixo |
+
+O Nome se anuncia obrigatório no próprio bloco, com o rótulo `(obrigatório)` e o atributo `required`. O espaço de aviso ao lado do título da coluna fica só para erro passageiro — celular incompleto, e-mail inválido, titulação aberta e vazia —, e o botão Gerar diz no `title` por que está apagado.
 
 O histórico cobre tudo: texto, marcações, cor, espessura, títulos, logotipo, cadeados, arraste, criação e remoção de linhas e campos. A digitação é agrupada em blocos de cerca de 0,3 segundo, então cada passo desfaz um trecho, não uma letra.
 
@@ -205,6 +247,16 @@ Os arquivos `logo_uerj.png`, `logo_uerj-75.png` e `uerj-75.png` ficam guardados 
 
 Cor pelos seis atalhos ou pelo seletor do sistema, e espessura de 0 a 10 pixels. Em 0, a barra e o espaçamento extra saem do código; permanece o afastamento de 12px entre logotipo e texto.
 
+## Passo a passo do webmail
+
+No fim da página, um bloco recolhido — "Como colocar a assinatura no webmail" — descreve o caminho no SOGo com os rótulos como aparecem na tela: **Preferências** → aba **Correio** → **CONTAS IMAP** → **Editar Contas** → **Identidades** → campo **Assinatura**.
+
+Três passos vão destacados, porque são onde se erra:
+
+1. O botão chamado **Fonte** não é tipo de letra: é o código-fonte do editor. Colar sem apertá-lo destrói a tabela.
+2. É preciso apertar **Fonte** de novo depois de colar. Esse segundo clique é o que faz o editor absorver o conteúdo.
+3. O **coração** na lista de Identidades marca a identidade padrão. Editar a assinatura numa identidade que não é a padrão não produz efeito nenhum.
+
 ## Código gerado
 
 Tabela com estilos embutidos, `role="presentation"`, `cellspacing` e `cellpadding` zerados, dimensões explícitas e `bgcolor` além de `background-color`, para atravessar clientes de e-mail antigos. Sai em linha única, sem quebras, pronto para colar no campo de assinatura em modo HTML.
@@ -215,4 +267,4 @@ Nada é enviado a servidor algum: tudo acontece no navegador. O único dado guar
 
 ## Autoria
 
-Desenvolvido por Toni Henriques, <oliveira.toni@uerj.br>.
+Desenvolvido por Toni Henriques, <tonihenriques@gmail.com>.

@@ -8,10 +8,10 @@ Aplicação de página única, sem servidor, sem build e sem dependências em pr
 
 | Arquivo | Linhas | Responsabilidade |
 | --- | --- | --- |
-| `index.html` | ~200 | estrutura, textos de ajuda, metadados e dados estruturados |
-| `estilo.css` | ~230 | apresentação |
-| `assinatura.js` | ~1.180 | campos, matriz, cadeado, arraste, histórico, validação, expurgo e geração do HTML |
-| `testes/` | ~950 | bateria em jsdom; única parte com dependência (`jsdom`) |
+| `index.html` | ~210 | estrutura, textos de ajuda, metadados e dados estruturados |
+| `estilo.css` | ~240 | apresentação |
+| `assinatura.js` | ~1.610 | campos, titulação, matriz, cadeado, arraste, títulos, histórico, validação, expurgo e geração do HTML |
+| `testes/` | ~1.230 | bateria em jsdom; única parte com dependência (`jsdom`) |
 
 O comportamento esperado de cada controle está no `README.md` e não se repete aqui.
 
@@ -20,7 +20,9 @@ O comportamento esperado de cada controle está no `README.md` e não se repete 
 - `defs` descreve os campos; `DEFS_BASE` guarda a lista original para recriar o que for apagado; `porId` indexa por identificador.
 - Todo `id` gerado leva o prefixo `PRE` (`asg_`), e o acesso passa por `campo(id)`, `tituloEl(id)` e `marca(k, id)`. O identificador lógico continua sem prefixo, no `dataset.id` do bloco.
 - **Cadeado**: mora na classe `travada` da linha. `travada(l)` responde, `travas()` serializa, `aplicarTravas()` reconstrói, `TRAVAS_PADRAO` é o padrão (só a primeira linha). `alvoSubir`/`alvoDescer` decidem para onde uma linha vai, saltando blocos travados; `pontoDeInsercao()` diz onde o rodapé cria. Nenhuma outra parte do código deve testar `classList.contains("travada")` diretamente.
-- **Títulos**: `formaTitulo()` decide qual forma sai, e `escreverTitulo()` aplica maiúscula, vírgula e negrito. As formas moram nas `defs`, em minúsculas, com a palavra que pode ir a negrito entre chaves. `ajustarBotoesTitulo()` desabilita os botões do campo enquanto a automação manda naquela linha.
+- **Títulos**: `formaTitulo()` decide qual forma sai; `partesTitulo()` a reparte em antes, palavra e depois; `escreverTitulo()` aplica maiúscula, caixa alta, negrito e itálico a cada pedaço. As formas moram nas `defs`, em minúsculas, com a palavra que recebe os efeitos entre chaves. `ajustarBotoesTitulo()` desabilita os botões do campo enquanto a automação manda naquela linha.
+- **Trechos de vírgula**: dentro de `corpoHTML()`, cada peça da linha recebe um número de trecho, e `caixaDoTrecho` diz se aquele trecho pode ir a maiúsculas. É a unidade da congruência da caixa alta, e não a linha inteira.
+- **Titulação**: é um campo com `dentroDe:"nome"`, sem bloco próprio na matriz — mora dentro do bloco do Nome e por isso o acompanha de graça. `marcarTitulacao()` é o único lugar que decide se ela está aberta, porque são duas classes, a dela e a do bloco, que reserva a largura no rateio da linha. `fecharTitulacao()` apaga e devolve as marcações ao padrão; `abrirTitulacao()` é a versão que passa pelo histórico.
 - **Escolhas sem quadradinho**: os `input` continuam no DOM, invisíveis, e a classe `escolhida` é posta por `sincronizarEscolhas()`, chamada em `atualizar()`, ao abrir o diálogo e a cada `change` do documento. Não usar `:has(input:checked)` para isso: a marcação muda por código com frequência e a repintura não é confiável em todos os motores.
 - `PADRAO` é a disposição inicial, um vetor de linhas contendo identificadores.
 - A matriz é DOM puro: `.matriz > .linha > .tile`, mais `.entre` (faixas de soltura) e `.rodapeMatriz` (barra fixa, sempre o último filho).
@@ -56,6 +58,17 @@ Cada item abaixo já quebrou uma vez. Vale testar de novo a cada mudança.
 
 - O Nome deixou de ser preso por código (`garantirNome()` não existe mais). A linha dele sai travada, e é o cadeado que o mantém no alto. Destravada, a linha se move e o bloco arrasta como qualquer outro.
 - Quem audita precisa saber: **a primeira linha não é mais especial**. Qualquer teste que pressuponha "Nome na posição 0" deve, em vez disso, verificar o cadeado.
+- Os títulos deixaram de ser automáticos por natureza: agora cada campo tem os próprios botões, e "Automatizar títulos" é um modo que só age em linha compartilhada.
+- O "Atenciosamente," saiu de 12px e passou a usar `TAM_CORPO`, o mesmo do corpo da assinatura. Menor que o restante, ele ficava miúdo demais.
+
+### Defeitos encontrados na revisão da titulação
+
+17. Digitar só na titulação zerava a visualização, porque `entra("nome")` exigia o Nome preenchido.
+18. Restaurar padrões, Recomeçar, Copiar e recomeçar e o expurgo não fechavam a titulação, que ficava aberta e vazia — estado que trava a geração.
+19. O desfazer devolvia a titulação sem a classe que reserva a largura do bloco. As duas classes viraram uma função só, `marcarTitulacao()`.
+20. O ✕ limpava o conteúdo e deixava as marcações antigas.
+21. O negrito próprio da titulação não produzia efeito: ela herdava o peso do invólucro da linha do Nome.
+22. O bloco do Nome com titulação disputava largura em igualdade com os vizinhos, e a caixa do Nome ficava espremida.
 
 ## 4. Pontos frágeis conhecidos
 
@@ -65,10 +78,12 @@ Cada item abaixo já quebrou uma vez. Vale testar de novo a cada mudança.
 - **Ordem de declaração.** O arquivo executa código no meio do módulo (monta a matriz antes de várias funções). Já houve três erros de zona morta temporal com `const`/`let`. Novas constantes precisam ficar no topo.
 - **Verificação de logotipos** depende de `localStorage`; em navegação anônima com armazenamento bloqueado, os testes acontecem a cada carga. Há caso automatizado cobrindo a carga nessa condição.
 - **Relógio de inatividade em ouvintes de captura no `document`.** Qualquer novo diálogo precisa lembrar que Esc, clique e tecla contam como interação e reiniciam a contagem.
+- **Chaves do estado do histórico.** `estadoAtual()` guarda o valor do campo em `v` e o título em `t`; por isso os botões de título ficaram em `vt` e `rt`. Uma colisão de chave aí já fez o desfazer escrever `false` dentro dos campos, e não dá erro nenhum — só corrompe o dado.
+- **Campo dentro de campo.** A titulação não tem bloco na matriz, então todo laço que percorre `defs` esperando um `tile` precisa da guarda `if(!t) return`, e `camposMudaram()` ignora quem tem `dentroDe`.
 
 ## 5. Verificações sugeridas
 
-Cento e um casos automatizados em `testes/casos.js`, uma seção para cada bloco abaixo. Rode `npm test` antes e depois de qualquer mudança. O que a bateria ainda não alcança está marcado com **(à mão)**.
+Cento e dezessete casos automatizados em `testes/casos.js`, uma seção para cada bloco abaixo. Rode `npm test` antes e depois de qualquer mudança. O que a bateria ainda não alcança está marcado com **(à mão)**.
 
 ### Geração do HTML
 
@@ -102,6 +117,17 @@ Cento e um casos automatizados em `testes/casos.js`, uma seção para cada bloco
 - Nome + Matrícula sai entre parênteses e em minúsculas, e só nesse par.
 - O negrito do título não alcança `:`, vírgula, `n.` nem `de`.
 - Campo livre: o título ganha um `:` e nunca dois; título e conteúdo aparecem um sem o outro.
+- Congruência da caixa alta: título em posição de rótulo obedece ao botão; em posição corrida, ao trecho de vírgula inteiro, ignorando os campos sem botão Aa.
+- Pontuação de fecho: só Sala e Atendimento, só na última posição preenchida, trocando a pontuação que houver. Com os dois na mesma linha, o ponto sai só no fim.
+- O conectivo do título não se repete no conteúdo — nada de "de de" nem "n. n.".
+- A pontuação entre título e conteúdo só recebe formatação quando os dois lados a têm.
+
+### Titulação
+
+- Todo caminho que apaga conteúdo tem de fechá-la: Recomeçar, Copiar e recomeçar, as três opções de Restaurar padrões e o expurgo por inatividade. Aberta e vazia, ela trava a geração, e foi assim que os defeitos apareceram.
+- O desfazer devolve as duas classes, a dela e a da reserva de largura do bloco.
+- O negrito dela é declarado à força na saída, porque o invólucro da linha do Nome carrega o peso do Nome e ela o herdaria.
+- A caixa alta do Nome e a dos títulos não a alcançam.
 
 ### Escolhas
 
