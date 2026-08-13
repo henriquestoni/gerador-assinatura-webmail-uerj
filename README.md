@@ -24,25 +24,46 @@ npm install jsdom
 node testes/executar.js
 ```
 
-Oitenta e dois casos cobrindo geração do HTML, validação, matriz, escolhas, cadeado, histórico, restauração, cópia e expurgo por inatividade, além de uma bateria de quatrocentas operações aleatórias que confere os invariantes da matriz. Para rodar só uma seção: `node testes/executar.js Matriz`. O comando devolve código de saída 1 se algo falhar.
+Cento e um casos cobrindo geração do HTML, títulos, validação, matriz, escolhas, cadeado, histórico, restauração, cópia e expurgo por inatividade, além de uma bateria de quatrocentas operações aleatórias que confere os invariantes da matriz. A seção "Títulos" tem um caso para cada linha da tabela de decisão. Para rodar só uma seção: `node testes/executar.js Matriz`. O comando devolve código de saída 1 se algo falhar.
 
 ## Campos
 
 Cada bloco da matriz é um campo. Campo vazio não aparece no resultado.
 
-| Campo | Título sozinho na linha | Título acompanhado | Observações |
+| Campo | Título completo | Abreviado | Observações |
 | --- | --- | --- | --- |
-| Nome | sem título | sem título | obrigatório; 16px; a linha dele vem travada, e é o cadeado que o mantém no alto |
-| Cargo | `Cargo:` | sem título | |
-| Função | `Função:` | sem título | |
-| Matrícula | `Matrícula:` | `mat.` | máscara `00.000-0` |
-| Lotação | sem título | sem título | caixa alta marcada por padrão |
-| Celular | `Celular:` | `Cel:` | máscara `(00)00000-0000` |
-| Telefone | `Telefone:` | `Tel:` | texto livre, aceita ramais |
-| E-mail | `E-mail:` | sem título | vira link `mailto:` |
-| Sala | `Sala:` | `sala` | |
-| Atendimento | `Atendimento:` | `Atendimento:` | |
-| Campo livre | título digitado por quem usa | idem | entra na assinatura pelo título; conteúdo sozinho não aparece |
+| Nome | — | — | obrigatório; 16px; a linha dele vem travada, e é o cadeado que o mantém no alto |
+| Cargo | `Cargo:` | — | |
+| Função | `Função:` | — | |
+| Matrícula | `Matrícula:` · `matrícula:` nos parênteses | `Mat.` · `mat.` nos parênteses | máscara `00.000-0`; nunca fica sem rótulo |
+| Lotação | — | — | caixa alta marcada por padrão |
+| Celular | `Celular:` | `Cel:` | máscara `(21)91234-5678`, permanente e calada |
+| Telefone | `Telefone:` | `Tel:` | texto livre: aceita ramais, dois números, o que se escrever |
+| E-mail | `E-mail:` | — | vira link `mailto:` |
+| Sala | `Sala:` | `Sala n.` · `, sala n.` acompanhada | nunca fica sem rótulo |
+| Atendimento | `Atendimento:` | `Atendimento de` · `, atendimento de` acompanhado | nunca fica sem rótulo |
+| Campo livre | título digitado por quem usa, sempre terminado em `:` | — | título e conteúdo aparecem um sem o outro |
+
+### Títulos
+
+Cada bloco traz, à esquerda das opções, **T** para mostrar ou ocultar o título e **T.** para trocar a forma completa pela abreviada — onde cada um fizer sentido:
+
+| Campo | T | T. |
+| --- | :---: | :---: |
+| Cargo, Função, E-mail | ✔ | — |
+| Celular, Telefone | ✔ | ✔ |
+| Matrícula, Sala, Atendimento | — | ✔ |
+| Nome, Lotação, Campo livre | — | — |
+
+**Automatizar títulos**, na coluna da direita, age só nas linhas com mais de um campo preenchido, e ali silencia os títulos. Linha de um campo só obedece aos botões do bloco. Enquanto a automação estiver no comando de uma linha, os botões dos campos dela ficam desabilitados, dizendo o porquê.
+
+Três exceções escapam da automação, porque sem rótulo o conteúdo delas fica ilegível: **Matrícula**, que mantém a forma escolhida no botão, e **Sala** e **Atendimento**, que acompanhados assumem a forma corrida e se colam ao vizinho por vírgula — `Cargo: Técnico, sala n. 3.002, atendimento de 9h às 17h`.
+
+**Nome e Matrícula na mesma linha**, com o Nome à frente, é caso à parte: a matrícula entra entre parênteses e em minúsculas — `Maria da Silva (mat. 00.000-0)`.
+
+A primeira posição da linha é a do primeiro campo **preenchido**, não a da grade: se o campo à esquerda estiver vazio, quem abre a linha é o seguinte, e vai com maiúscula e sem vírgula.
+
+O negrito dos títulos alcança só a palavra. Nem o `:`, nem a vírgula, nem o `n.` ou o `de` entram em negrito.
 
 ### Como se escolhe
 
@@ -50,14 +71,16 @@ Não há quadradinho nem bolinha à vista: a opção em uso é a que está com a
 
 ### Marcações de cada bloco
 
-Cada marcação é uma caixa com o sinal à esquerda e o nome à direita; em bloco estreito fica só o sinal, e o nome volta pelo `title`.
+As marcações ficam recolhidas atrás da setinha ⌄ de cada bloco; um ponto ocre nela avisa quando o campo tem alguma fora do padrão. Cada uma é uma caixa com o sinal dentro, e o nome vem pelo `title`.
 
 | Sinal | Marcação | O que faz |
 | --- | --- | --- |
-| **B** | Negrito | deixa o conteúdo em negrito no resultado |
-| Aa | Caixa alta (Nome e Lotação) | converte o conteúdo para maiúsculas apenas na saída; o que foi digitado continua intacto |
-| 📱 | Celular (campo Telefone) | trata o campo como celular, aplicando máscara e títulos de celular |
-| 💬 | WhatsApp | gera link `wa.me` a partir do número. Só funciona com celular válido (11 dígitos, começando por 9 depois do DDD). Sozinho na linha o título vira `Celular/WhatsApp:`; acompanhado, sai sem título |
+| Aa | Caixa alta | converte o conteúdo para maiúsculas apenas na saída; o que foi digitado continua intacto. Não existe em campo só de algarismos |
+| **N** | Negrito | deixa o conteúdo em negrito no resultado |
+| *I* | Itálico | deixa o conteúdo em itálico |
+| balão | WhatsApp | gera link `wa.me` a partir do número, nos campos de telefone e no campo livre |
+
+Caixa alta e WhatsApp se excluem: um é coisa de texto, o outro é coisa de número.
 - **Lixeira do bloco** (vermelha, só aparece com conteúdo): apaga o conteúdo daquele campo, e o título, no caso do campo livre.
 
 ## Controles de linha
@@ -82,7 +105,7 @@ Travar uma linha congela a estrutura dela, não o conteúdo.
 | Enquanto travada | |
 | --- | --- |
 | não faz | subir, descer, ser eliminada, receber bloco arrastado, deixar sair o que está nela, ganhar campo livre |
-| continua fazendo | aceitar texto em todos os campos, aceitar as marcações (Negrito, Caixa alta, Cel, Zap) e criar linhas vazias acima e abaixo de si |
+| continua fazendo | aceitar texto em todos os campos, aceitar as marcações de título e de formato, e criar linhas vazias acima e abaixo de si |
 
 A linha do Nome sai travada na estrutura padrão: é isso, e não uma regra de código, que a mantém no alto. Destravando, o Nome anda como qualquer outro campo.
 
@@ -130,6 +153,23 @@ Lista só as opções aplicáveis no momento; com mais de uma, aparece também "
 | Copiar e recomeçar | copia e, só se a cópia for confirmada, apaga o conteúdo dos campos | títulos, marcações, disposição, logotipo e barra |
 
 Se a cópia falhar, nada é apagado: o código fica selecionado e a página avisa para usar Ctrl+C.
+
+## WhatsApp
+
+Marcado o balão, o número vira link `wa.me`. A regra oficial do WhatsApp é uma só: número completo em formato internacional, **só algarismos, sem `+`, sem zeros de prefixo, sem parênteses e sem traços**, com o teto de 15 algarismos do padrão E.164. A página normaliza o que for digitado:
+
+| Digitado | Link |
+| --- | --- |
+| `(21)91234-5678` | `wa.me/5521912345678` |
+| `(11)2222-2222` | `wa.me/551122222222` |
+| `+5521967395087` | `wa.me/5521967395087` |
+| `00 55 21 91234-5678` | `wa.me/5521912345678` |
+| `0800 570 0800` | `wa.me/558005700800` |
+| `+1 (555) 123-4567` | `wa.me/15551234567` |
+
+Recusa, dizendo o motivo: número nacional com menos de 10 ou mais de 11 algarismos, número sem DDD como `4004-1234`, e qualquer conteúdo com letra — `(21)2334-0000, ramal 210` colaria o 210 no fim e produziria um link errado. Não se exige que o celular comece por 9: existe WhatsApp em linha fixa e em número antigo.
+
+Sobre 0800: a Meta não o proíbe, mas ele só se registra pela API do WhatsApp Business, por parceiro oficial — no aplicativo comum a ligação de verificação esbarra na própria URA. Como número, entra no link pela mesma regra: cai o zero, entra o 55.
 
 ## Espaços na assinatura
 

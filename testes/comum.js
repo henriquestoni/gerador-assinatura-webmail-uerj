@@ -19,7 +19,7 @@ const PONTE = `
   desfazer, refazer, firmar, estadoAtual, aplicarEstado, registrarAgora,
   criarCampoLivre, removerLinha, novaLinha, removivel, linhas, blocos,
   camposMudaram, podeRestaurar, normalizarTelefone, mascaraTelefone, mascaraMatricula,
-  realcar, esc, conteudo, tituloDe,
+  realcar, esc, conteudo, formaTitulo, escreverTitulo, automatizarTitulos,
   travada, travar, travas, alvoSubir, alvoDescer, moverLinha, pontoDeInsercao, TRAVAS_PADRAO,
   abrirContagem, apagarTudo, pararContagem, reiniciarOcio, OCIO, CONTAGEM,
   get pilha(){return pilha}, get indice(){return indice}, get exemplo(){return exemplo}

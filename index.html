@@ -75,7 +75,7 @@
         <b>Ordem e agrupamento:</b> arraste pela alça ⠿ (ou dê foco nela com Tab e use as setas). Blocos na mesma linha saem lado a lado, separados por barra, até três por linha; em linhas diferentes, saem um embaixo do outro.<br>
         <b>Espaços:</b> uma linha sem nenhum campo abre um respiro entre os campos de cima e os de baixo; duas ou três seguidas aumentam o espaço. Linhas assim no começo e no fim não produzem nada.<br>
         <b>Linhas:</b> ▲ e ▼ movem a linha inteira, e só aparecem quando há para onde ir; 🗑 elimina a linha, nas vazias e nas que só tenham campos livres. Tirar o último bloco de uma linha não a elimina: ela fica ali, vazia, à sua disposição.<br>
-        <b>Em cada bloco:</b> "Negrito" e "Caixa alta" mudam como o texto sai; a lixeirinha apaga só aquele campo. Tudo é reversível com Ctrl+Z.</p>
+        <b>Em cada bloco:</b> a setinha ⌄ abre as opções daquele campo, e um ponto nela avisa quando há alguma fora do padrão. À esquerda ficam as do título, <b>T</b> para mostrá-lo e <b>T.</b> para abreviá-lo; à direita, as da forma do conteúdo, <b>Aa</b> de caixa alta, <b>N</b> de negrito, <b>I</b> de itálico, mais o WhatsApp nos campos de telefone. A lixeirinha apaga só aquele campo. Tudo é reversível com Ctrl+Z.</p>
       <p class="ajuda hide"><b>🔓 Cadeado:</b> fecha a linha para mudanças de estrutura. A linha travada não sobe, não desce, não é eliminada, não recebe bloco arrastado e não deixa sair o que está nela; as setas e a lixeira dela somem. O que continua livre é o essencial: <b>o texto e as marcações dos campos seguem editáveis</b>.<br>
         <b>Por que existe:</b> a linha do Nome já vem travada, e é isso que a mantém no alto. Destrave se quiser levá-la para outro lugar; trave as demais quando a disposição estiver do jeito que você quer e não quiser desfazê-la sem querer.<br>
         <b>Efeito nas vizinhas:</b> uma linha nunca para dentro de um trecho travado. Ao subir, ela salta o bloco de linhas travadas e para logo acima dele. Se tudo o que está acima estiver travado, a seta para cima não tem função; o mesmo vale para baixo.</p>
@@ -102,12 +102,14 @@
 
         <section>
           <h2>Títulos</h2>
-          <p class="ajuda hide"><b>Forma longa e curta:</b> sozinho na linha, o campo mostra o título por extenso (Telefone:, Celular:, Matrícula:); acompanhado de outros, usa a forma curta (Tel:, Cel:, mat.).<br>
-            <b>Mostrar títulos:</b> sem esta opção, nenhum título aparece; ficam só os conteúdos separados por barra.<br>
-            <b>Títulos em negrito:</b> controla apenas os títulos. O negrito do conteúdo continua em cada bloco.<br>
-            <b>Campo livre:</b> usa o título que você escrever, e não entra na assinatura enquanto esse título estiver em branco, mesmo com conteúdo digitado.</p>
+          <p class="ajuda hide"><b>Automatizar títulos:</b> age só nas linhas com mais de um campo preenchido, e ali silencia os títulos, deixando os conteúdos separados por barra. Linha de um campo só obedece aos botões do próprio bloco.<br>
+            <b>Exceções:</b> Matrícula, Sala e Atendimento nunca ficam sem rótulo, senão o conteúdo deles fica ilegível. Acompanhados, Sala e Atendimento se colam ao vizinho por vírgula: <i>Cargo: Técnico, sala n. 3.002</i>.<br>
+            <b>Nome e Matrícula na mesma linha:</b> a matrícula entra entre parênteses, em minúsculas: <i>Maria da Silva (mat. 00.000-0)</i>.<br>
+            <b>Botões T e T. de cada bloco:</b> o primeiro mostra ou oculta o título; o segundo troca a forma completa pela abreviada. Enquanto a automação estiver no comando daquela linha, os dois ficam apagados.<br>
+            <b>Títulos em negrito:</b> controla apenas os títulos, e nunca alcança o ":" nem a pontuação. O negrito do conteúdo continua em cada bloco.<br>
+            <b>Campo livre:</b> usa o título que você escrever. Título e conteúdo aparecem de forma independente: um sem o outro, sai o que houver.</p>
           <div class="escolhas">
-            <label class="marc"><input type="checkbox" id="titMostrar" autocomplete="off" checked> Mostrar títulos (Tel:, Mat. …)</label>
+            <label class="marc"><input type="checkbox" id="titAuto" autocomplete="off" checked> Automatizar títulos</label>
             <label class="marc"><input type="checkbox" id="titNegrito" autocomplete="off" checked> Títulos em negrito</label>
           </div>
         </section>

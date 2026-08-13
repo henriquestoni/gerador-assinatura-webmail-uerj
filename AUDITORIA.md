@@ -10,8 +10,8 @@ Aplicação de página única, sem servidor, sem build e sem dependências em pr
 | --- | --- | --- |
 | `index.html` | ~200 | estrutura, textos de ajuda, metadados e dados estruturados |
 | `estilo.css` | ~230 | apresentação |
-| `assinatura.js` | ~1.130 | campos, matriz, cadeado, arraste, histórico, validação, expurgo e geração do HTML |
-| `testes/` | ~800 | bateria em jsdom; única parte com dependência (`jsdom`) |
+| `assinatura.js` | ~1.180 | campos, matriz, cadeado, arraste, histórico, validação, expurgo e geração do HTML |
+| `testes/` | ~950 | bateria em jsdom; única parte com dependência (`jsdom`) |
 
 O comportamento esperado de cada controle está no `README.md` e não se repete aqui.
 
@@ -20,6 +20,7 @@ O comportamento esperado de cada controle está no `README.md` e não se repete 
 - `defs` descreve os campos; `DEFS_BASE` guarda a lista original para recriar o que for apagado; `porId` indexa por identificador.
 - Todo `id` gerado leva o prefixo `PRE` (`asg_`), e o acesso passa por `campo(id)`, `tituloEl(id)` e `marca(k, id)`. O identificador lógico continua sem prefixo, no `dataset.id` do bloco.
 - **Cadeado**: mora na classe `travada` da linha. `travada(l)` responde, `travas()` serializa, `aplicarTravas()` reconstrói, `TRAVAS_PADRAO` é o padrão (só a primeira linha). `alvoSubir`/`alvoDescer` decidem para onde uma linha vai, saltando blocos travados; `pontoDeInsercao()` diz onde o rodapé cria. Nenhuma outra parte do código deve testar `classList.contains("travada")` diretamente.
+- **Títulos**: `formaTitulo()` decide qual forma sai, e `escreverTitulo()` aplica maiúscula, vírgula e negrito. As formas moram nas `defs`, em minúsculas, com a palavra que pode ir a negrito entre chaves. `ajustarBotoesTitulo()` desabilita os botões do campo enquanto a automação manda naquela linha.
 - **Escolhas sem quadradinho**: os `input` continuam no DOM, invisíveis, e a classe `escolhida` é posta por `sincronizarEscolhas()`, chamada em `atualizar()`, ao abrir o diálogo e a cada `change` do documento. Não usar `:has(input:checked)` para isso: a marcação muda por código com frequência e a repintura não é confiável em todos os motores.
 - `PADRAO` é a disposição inicial, um vetor de linhas contendo identificadores.
 - A matriz é DOM puro: `.matriz > .linha > .tile`, mais `.entre` (faixas de soltura) e `.rodapeMatriz` (barra fixa, sempre o último filho).
@@ -67,14 +68,14 @@ Cada item abaixo já quebrou uma vez. Vale testar de novo a cada mudança.
 
 ## 5. Verificações sugeridas
 
-Oitenta e dois casos automatizados em `testes/casos.js`, uma seção para cada bloco abaixo. Rode `npm test` antes e depois de qualquer mudança. O que a bateria ainda não alcança está marcado com **(à mão)**.
+Cento e um casos automatizados em `testes/casos.js`, uma seção para cada bloco abaixo. Rode `npm test` antes e depois de qualquer mudança. O que a bateria ainda não alcança está marcado com **(à mão)**.
 
 ### Geração do HTML
 
 - Tabela balanceada, linha única, sem `\n`, sem campo vazio produzindo linha ou espaço.
 - `colspan` coerente nos três cenários: com barra, sem barra (espessura 0) e sem logotipo.
 - Escape: digitar `<b>x</b>`, `"` e `&` em todos os campos e conferir que sai literal.
-- Link de WhatsApp só com celular válido; telefone fixo nunca vira link.
+- Link de WhatsApp: normalização de forma nacional, internacional e 0800; recusa de número curto, sem DDD ou com letra.
 - Caixa alta afeta a saída, não o valor digitado.
 
 ### Matriz e arraste
@@ -93,11 +94,20 @@ Oitenta e dois casos automatizados em `testes/casos.js`, uma seção para cada b
 - O rodapé cria acima do bloco travado do fim; com tudo travado, desabilita e avisa.
 - Cadeado entra no histórico e conta em "Restaurar padrões".
 
+### Títulos
+
+- Um caso por linha da tabela de decisão: campo sozinho, campo acompanhado, com e sem automação, abreviado e completo.
+- A primeira posição da linha é a do primeiro campo **preenchido**; deixar o campo à esquerda em branco tem de promover o seguinte, com maiúscula e sem vírgula. É a regra mais fácil de quebrar numa mudança.
+- Matrícula, Sala e Atendimento nunca ficam sem rótulo, mesmo com a automação ligada.
+- Nome + Matrícula sai entre parênteses e em minúsculas, e só nesse par.
+- O negrito do título não alcança `:`, vírgula, `n.` nem `de`.
+- Campo livre: o título ganha um `:` e nunca dois; título e conteúdo aparecem um sem o outro.
+
 ### Escolhas
 
 - A caixa marcada acompanha clique, desfazer e restauração.
 - Rádio: marcar um logotipo desmarca a caixa do anterior.
-- Caixa de opção desabilitada aparece como tal (WhatsApp com o campo em modo telefone).
+- Caixa de opção desabilitada aparece como tal (WhatsApp quando a caixa alta está marcada).
 
 ### Histórico
 

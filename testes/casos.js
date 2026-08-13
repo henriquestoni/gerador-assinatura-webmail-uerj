@@ -116,15 +116,7 @@ caso("Geração", "número incompleto não vira link", ok => {
   c.fechar();
 });
 
-caso("Geração", "sem a marcação de WhatsApp, telefone algum vira link", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.digitar("celular", "(21)91234-5678");
-  c.marcar("k_fixo", false);
-  c.digitar("fixo", "(21)2334-0000, ramal 210");
-  ok(!c.api.gerar().includes("wa.me"), c.api.corpoHTML());
-  c.fechar();
-});
+
 
 caso("Geração", "o campo Telefone com WhatsApp aceita número internacional", ok => {
   const c = abrir();
@@ -170,35 +162,11 @@ caso("Geração", "caixa alta muda a saída, não o que foi digitado", ok => {
   c.fechar();
 });
 
-caso("Geração", "campo livre só entra pelo título", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.digitar("livre", "conteudo solto");
-  const semTitulo = c.api.corpoHTML().includes("conteudo solto");
-  c.digitar("t_livre", "Sítio");
-  ok(!semTitulo && c.api.corpoHTML().includes("conteudo solto"));
-  c.fechar();
-});
 
-caso("Geração", "título longo sozinho, curto acompanhado", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.digitar("fixo", "(21)2334-0000");
-  const sozinho = c.api.corpoHTML().includes("Telefone: ");
-  c.digitar("celular", "(21)99999-9999");
-  const juntos = c.api.corpoHTML();
-  ok(sozinho && juntos.includes("Tel: ") && juntos.includes("Cel: "), juntos);
-  c.fechar();
-});
 
-caso("Geração", "sem 'Mostrar títulos' nenhum título aparece", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.digitar("cargo", "Analista");
-  c.marcar("titMostrar", false);
-  ok(!c.api.corpoHTML().includes("Cargo"), c.api.corpoHTML());
-  c.fechar();
-});
+
+
+
 
 caso("Geração", "linha vazia entre campos vira espaço; as das pontas somem", ok => {
   const c = abrir();
@@ -219,11 +187,181 @@ caso("Geração", "o exemplo dá lugar aos dados na primeira digitação", ok =>
   c.fechar();
 });
 
+/* --------------------------------------------------------------- títulos */
+/* Uma linha de teste por linha da tabela de decisão. `texto` devolve o corpo
+   sem as marcas de estilo, para a asserção falar da frase, não do HTML. */
+
+const texto = c => c.api.corpoHTML()
+  .replace(/<span[^>]*>/g, "").replace(/<\/span>/g, "")
+  .replace(/<a[^>]*>/g, "").replace(/<\/a>/g, "")
+  .replace(/<br \/>/g, " ¶ ");
+
+/* põe os campos indicados juntos na segunda linha da matriz */
+const juntar = (c, ids) => {
+  const disp = c.api.disposicao().map(l => l.filter(id => !ids.includes(id)));
+  disp.splice(1, 0, ids);
+  c.api.aplicar(disp, false);
+};
+
+caso("Títulos", "campo sozinho na linha mostra o título completo", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  ok(texto(c) === "Cargo: Técnico", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "a automação silencia os títulos na linha compartilhada", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("funcao", "Diretor");
+  ok(texto(c) === "Técnico | Diretor", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "a automação não age em linha de um campo só", ok => {
+  const c = abrir();
+  c.digitar("celular", "21912345678");
+  ok(texto(c) === "Celular: (21)91234-5678", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "Sala acompanhada se cola ao vizinho por vírgula", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("sala", "3.002");
+  juntar(c, ["cargo", "sala"]);
+  ok(texto(c) === "Técnico, sala n. 3.002", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "Sala e Atendimento juntos correm na mesma frase", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("sala", "3.002");
+  c.digitar("atendimento", "9h às 17h");
+  juntar(c, ["cargo", "sala", "atendimento"]);
+  ok(texto(c) === "Técnico, sala n. 3.002, atendimento de 9h às 17h", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "a primeira posição é a do primeiro campo PREENCHIDO", ok => {
+  const c = abrir();
+  c.digitar("sala", "3.002");
+  c.digitar("atendimento", "9h às 17h");
+  juntar(c, ["cargo", "sala", "atendimento"]);          /* cargo fica vazio */
+  ok(texto(c) === "Sala n. 3.002, atendimento de 9h às 17h", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "Matrícula escapa da automação: nunca fica sem rótulo", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("matricula", "000000");
+  juntar(c, ["cargo", "matricula"]);
+  ok(texto(c) === "Técnico | Matrícula: 00.000-0", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "Nome e Matrícula na mesma linha: parênteses e minúsculas", ok => {
+  const c = abrir();
+  c.digitar("nome", "Maria da Silva");
+  c.digitar("matricula", "000000");
+  juntar(c, ["nome", "matricula"]);
+  ok(texto(c) === "Maria da Silva (matrícula: 00.000-0)", texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "sem automação, cada campo obedece ao próprio botão", ok => {
+  const c = abrir();
+  c.marcar("titAuto", false);
+  c.digitar("cargo", "Técnico");
+  c.digitar("funcao", "Diretor");
+  const ambos = texto(c);
+  c.marcar("v_cargo", false);
+  ok(ambos === "Cargo: Técnico | Função: Diretor" && texto(c) === "Técnico | Função: Diretor",
+     { ambos, depois: texto(c) });
+  c.fechar();
+});
+
+caso("Títulos", "sem automação, o botão de abreviar troca a forma", ok => {
+  const c = abrir();
+  c.marcar("titAuto", false);
+  c.digitar("celular", "21912345678");
+  const completo = texto(c);
+  c.marcar("r_celular", true);
+  ok(completo === "Celular: (21)91234-5678" && texto(c) === "Cel: (21)91234-5678",
+     { completo, abreviado: texto(c) });
+  c.fechar();
+});
+
+caso("Títulos", "com a automação no comando, os botões da linha ficam inertes", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("funcao", "Diretor");
+  const inerte = c.api.el("v_cargo").disabled;
+  c.marcar("titAuto", false);
+  ok(inerte && c.api.el("v_cargo").disabled === false);
+  c.fechar();
+});
+
+caso("Títulos", "o negrito do título não alcança o dois-pontos", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  const corpo = c.api.corpoHTML();
+  ok(corpo.includes(">Cargo</span>: Técnico"), corpo);
+  c.fechar();
+});
+
+caso("Títulos", "o negrito do título não alcança a vírgula nem o 'n.'", ok => {
+  const c = abrir();
+  c.digitar("cargo", "Técnico");
+  c.digitar("sala", "3.002");
+  juntar(c, ["cargo", "sala"]);
+  const corpo = c.api.corpoHTML();
+  ok(corpo.includes(", <span style=\"font-weight:900\">sala</span> n. 3.002"), corpo);
+  c.fechar();
+});
+
+caso("Títulos", "Nome e Lotação não têm título nem botões", ok => {
+  const c = abrir();
+  c.digitar("nome", "Ana");
+  c.digitar("lotacao", "Ecomuseu");
+  ok(texto(c) === "Ana ¶ ECOMUSEU" && c.api.el("v_nome") === null && c.api.el("v_lotacao") === null,
+     texto(c));
+  c.fechar();
+});
+
+caso("Títulos", "campo livre: o título ganha dois-pontos, e nunca dois", ok => {
+  const c = abrir();
+  c.digitar("t_livre", "Plantão");
+  c.digitar("livre", "24h");
+  const simples = texto(c);
+  c.digitar("t_livre", "Plantão:");
+  ok(simples === "Plantão: 24h" && texto(c) === "Plantão: 24h", { simples, comDoisPontos: texto(c) });
+  c.fechar();
+});
+
+caso("Títulos", "campo livre: título e conteúdo aparecem um sem o outro", ok => {
+  const c = abrir();
+  c.digitar("t_livre", "Plantão");
+  const soTitulo = texto(c).trim();
+  c.digitar("t_livre", "");
+  c.digitar("livre", "24h");
+  ok(soTitulo === "Plantão:" && texto(c) === "24h", { soTitulo, soConteudo: texto(c) });
+  c.fechar();
+});
+
 /* ------------------------------------------------------------ validação */
 
-caso("Validação", "Nome vazio bloqueia a geração", ok => {
+caso("Validação", "o bloco do Nome se anuncia obrigatório, e o botão diz o porquê", ok => {
   const c = abrir();
-  ok(c.el("btnGerar").disabled && c.el("pendencia").textContent.includes("Nome"));
+  const rotulo = c.api.tile("nome").querySelector(".obrig");
+  const bloqueado = c.el("btnGerar").disabled && c.el("btnGerar").title.includes("Nome");
+  const semRuido = c.el("pendencia").textContent === "";
+  c.digitar("nome", "Ana");
+  ok(rotulo && rotulo.textContent === "(obrigatório)" && c.el("nome").required === true
+     && bloqueado && semRuido && c.el("btnGerar").disabled === false,
+     { rotulo: rotulo && rotulo.textContent, titulo: c.el("btnGerar").title });
   c.fechar();
 });
 
@@ -246,26 +384,9 @@ caso("Validação", "dez algarismos bastam: o celular não precisa começar por 
   c.fechar();
 });
 
-caso("Validação", "sem máscara, o Telefone aceita texto livre", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.marcar("k_fixo", false);
-  c.digitar("fixo", "(21)2334-0000, ramais 210, 211");
-  ok(!c.el("btnGerar").disabled && c.el("fixo").value === "(21)2334-0000, ramais 210, 211",
-     { pendencia: c.el("pendencia").textContent, valor: c.el("fixo").value });
-  c.fechar();
-});
 
-caso("Validação", "com máscara, o Telefone formata enquanto se digita", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.digitar("fixo", "2123340000");
-  const dez = c.el("fixo").value;
-  c.digitar("celular", "21912345678");
-  ok(dez === "(21)2334-0000" && c.el("celular").value === "(21)91234-5678",
-     { dez, onze: c.el("celular").value });
-  c.fechar();
-});
+
+
 
 caso("Validação", "a máscara descarta o 55 digitado à frente", ok => {
   const c = abrir();
@@ -305,42 +426,14 @@ caso("Validação", "normalização aceita +55 e reconhece fixo", ok => {
   c.fechar();
 });
 
-caso("Validação", "marcar WhatsApp no Telefone desliga e trava a máscara", ok => {
-  const c = abrir();
-  c.digitar("nome", "Ana");
-  c.marcar("w_fixo", true);
-  ok(c.api.el("k_fixo").disabled === true && c.el("fixo").placeholder === "+5521912345678",
-     { travada: c.api.el("k_fixo").disabled, exemplo: c.el("fixo").placeholder });
-  c.fechar();
-});
 
-caso("Validação", "o campo Celular não tem botão de máscara: ela é permanente", ok => {
-  const c = abrir();
-  ok(c.api.el("k_celular") === null && c.api.el("k_fixo") !== null);
-  c.fechar();
-});
+
+
 
 /* posição fixa, sempre nesta ordem, encostada à direita: Aa, WhatsApp, máscara, N, I */
-caso("Validação", "os sinais guardam a mesma posição em todos os campos", ok => {
-  const c = abrir();
-  const marcas = id => [...c.api.tile(id).querySelectorAll(".marc input")].map(i => i.id.replace("asg_" , "").replace("_" + id, ""));
-  ok(igual(marcas("livre"),     ["c","w","b","i"])
-     && igual(marcas("fixo"),      ["w","k","b","i"])
-     && igual(marcas("celular"),   ["w","b","i"])
-     && igual(marcas("cargo"),     ["c","b","i"])
-     && igual(marcas("matricula"),     ["b","i"]),
-     { livre:marcas("livre"), fixo:marcas("fixo"), celular:marcas("celular"),
-       cargo:marcas("cargo"), matricula:marcas("matricula") });
-  c.fechar();
-});
 
-caso("Validação", "o campo livre não leva máscara: ela reescreveria o que se digita", ok => {
-  const c = abrir();
-  c.digitar("t_livre", "Plantão");
-  c.digitar("livre", "3º andar, sala 12");
-  ok(c.api.el("k_livre") === null && c.el("livre").value === "3º andar, sala 12", c.el("livre").value);
-  c.fechar();
-});
+
+
 
 caso("Validação", "caixa alta e WhatsApp se excluem", ok => {
   const c = abrir();
@@ -352,14 +445,7 @@ caso("Validação", "caixa alta e WhatsApp se excluem", ok => {
   c.fechar();
 });
 
-caso("Validação", "no Telefone, a máscara também exclui a caixa alta e vice-versa", ok => {
-  const c = abrir();
-  c.marcar("w_fixo", true);
-  const zapTrava = c.api.el("k_fixo").disabled;
-  c.marcar("w_fixo", false);
-  ok(zapTrava && c.api.el("k_fixo").disabled === false);
-  c.fechar();
-});
+
 
 caso("Validação", "o campo livre também vira link de WhatsApp", ok => {
   const c = abrir();
@@ -534,13 +620,7 @@ caso("Escolhas", "marcar um logotipo desmarca a caixa do anterior", ok => {
   c.fechar();
 });
 
-caso("Escolhas", "a caixa desabilitada é marcada como tal", ok => {
-  const c = abrir();
-  const antes = caixa(c, "k_fixo").classList.contains("desabilitada");
-  c.marcar("w_fixo", true);                                   /* WhatsApp trava a máscara */
-  ok(!antes && caixa(c, "k_fixo").classList.contains("desabilitada"), caixa(c, "k_fixo").className);
-  c.fechar();
-});
+
 
 caso("Escolhas", "as marcações ficam recolhidas atrás da setinha", ok => {
   const c = abrir();
